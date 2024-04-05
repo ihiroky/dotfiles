@@ -1,0 +1,22 @@
+[Desktop Entry]
+Name=Google Chrome
+GenericName=Web Browser
+Exec=/opt/google/chrome/google-chrome %U
+Type=Application
+StartupNotify=true
+Keywords=chrome;
+Icon=/opt/google/chrome/product_logo_256.png
+Actions=default;tt;incognito;
+MimeType=text/html;text/xml;application/xhtml_xml;
+Categories=Application;Network;WebBrowser;
+Terminal=false
+
+[Desktop Action default]
+Name=Default
+Exec=/opt/google/chrome/google-chrome --profile-directory=Default
+[Desktop Action tt]
+Name=TT
+Exec=/opt/google/chrome/google-chrome "--profile-directory=Profile 1"
+[Desktop Action incognito]
+Name=Incognito
+Exec=/opt/google/chrome/google-chrome --incognito %U

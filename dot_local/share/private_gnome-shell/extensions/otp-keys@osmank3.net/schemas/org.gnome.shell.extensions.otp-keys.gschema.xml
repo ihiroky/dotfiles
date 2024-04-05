@@ -1,0 +1,19 @@
+<schemalist gettext-domain="gnome-shell-extensions">
+  <schema id="org.gnome.shell.extensions.otp-keys" path="/org/gnome/shell/extensions/otp-keys/">
+    <key name="secret-list" type="as">
+      <default>[ ]</default>
+      <summary>Secret keys list</summary>
+      <description>A list of secret and properties. Each secret has secretcode, username, epoctime(default 30) and digits(default 6)</description>
+    </key>
+    <key name="notifications" type="b">
+      <default>true</default>
+      <summary>Notification status</summary>
+      <description>Whether notification shown on copying to clipboard actions</description>
+    </key>
+    <key name="copy-icons" type="b">
+      <default>true</default>
+      <summary>Copy icons</summary>
+      <description>Whether or not the copy icons is displayed in the secret keys list</description>
+    </key>
+  </schema>
+</schemalist>

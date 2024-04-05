@@ -1,0 +1,22 @@
+[Desktop Entry]
+Name=Chromium-browser
+GenericName=Web Browser
+Exec=/opt/chromium/chrome %U
+Type=Application
+StartupNotify=true
+Keywords=chroium;
+Icon=/opt/chromium/product_logo_48.png
+Actions=default;tt;incognito;
+MimeType=text/html;text/xml;application/xhtml_xml;
+Categories=Application;Network;WebBrowser;
+Terminal=false
+
+[Desktop Action default]
+Name=Default
+Exec=/opt/chromium/chrome --profile-directory=Default %U
+[Desktop Action tt]
+Name=TT
+Exec=/opt/chromium/chrome --profile-directory="Profile 1" %U
+[Desktop Action incognito]
+Name=Incognito
+Exec=/opt/chromium/chrome --incognito %U

@@ -1,0 +1,20 @@
+[user]
+	name = {{ .name }}
+	email = {{ .email }}
+	signingkey = {{ .signingkey }}
+[core]
+	editor = /usr/bin/vim
+[remote "origin"]
+	prune = true
+[pull]
+	rebase = false
+[init]
+	defaultBranch = main
+[commit]
+	gpgsign = true
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential

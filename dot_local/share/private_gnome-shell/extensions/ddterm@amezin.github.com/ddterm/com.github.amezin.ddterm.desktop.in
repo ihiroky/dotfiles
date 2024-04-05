@@ -1,0 +1,54 @@
+[Desktop Entry]
+Type=Application
+Name[de]=ddterm
+Name[es]=ddterm
+Name[fr]=ddterm
+Name[pl]=ddterm
+Name[ru]=ddterm
+Name[zh_CN]=ddterm
+Name=ddterm
+# Translators: Search terms to find this application. Do NOT translate or localize the semicolons! The list MUST also end with a semicolon!
+Keywords[de]=shell;prompt;command;commandline;cmd;run;terminal;Eingabeaufforderung;Befehl;Befehlszeile;ausführen;
+Keywords[es]=shell;prompt;command;commandline;cmd;run;terminal;
+Keywords[fr]=shell;prompt;invite;command;commande;commandline;cmd;run;exécuter;terminal;
+Keywords[zh_CN]=shell;提示;命令;命令行;cmd;运行;终端;
+Keywords=shell;prompt;command;commandline;cmd;run;terminal;
+Comment[de]=Ein Aufklapp-Terminal für die GNOME Shell
+Comment[es]=Otra extensión de terminal desplegable para GNOME Shell
+Comment[fr]=Une extension de terminal déroulant pour GNOME shell
+Comment[ru]=Еще одно расширение выпадающего терминала для GNOME Shell
+Comment[zh_CN]=GNOME Shell的另一个下拉式终端扩展
+Comment=Another drop down terminal extension for GNOME Shell
+Icon=utilities-terminal
+TryExec=@LAUNCHER@
+Exec="@LAUNCHER@"
+Categories=GNOME;GTK;System;TerminalEmulator;
+StartupWMClass=Com.github.amezin.ddterm
+StartupNotify=true
+DBusActivatable=true
+Actions=toggle;preferences;
+OnlyShowIn=GNOME;
+X-ExecArg=--
+
+[Desktop Action toggle]
+Name[de]=Umschalter
+Name[es]=Alternar
+Name[fr]=Basculer
+Name[ru]=Переключатель
+Name[zh_CN]=切换按钮
+Name=Toggle
+Exec=gapplication action com.github.amezin.ddterm toggle
+
+[Desktop Action preferences]
+Name[cs]=Předvolby…
+Name[de]=Einstellungen …
+Name[es]=Ajustes…
+Name[fr]=Préférences…
+Name[it]=Preferenze…
+Name[nb_NO]=Innstillinger …
+Name[pl]=Preferencje…
+Name[pt]=Preferências…
+Name[ru]=Параметры…
+Name[zh_CN]=首选项…
+Name=Preferences…
+Exec=gapplication action com.github.amezin.ddterm preferences

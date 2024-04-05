@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface domain="ddterm@amezin.github.com">
+  <requires lib="gtk" version="4.0"/>
+  <template class="DDTermPrefsPanelIcon" parent="GtkBox">
+    <property name="margin-start">10</property>
+    <property name="margin-end">10</property>
+    <property name="margin-top">10</property>
+    <property name="margin-bottom">10</property>
+    <property name="orientation">vertical</property>
+    <property name="spacing">10</property>
+    <child>
+      <object class="GtkCheckButton" id="panel_icon_none_radio">
+        <property name="label" translatable="1">None</property>
+        <property name="action-name">settings.panel-icon-type</property>
+        <property name="action-target">&apos;none&apos;</property>
+        <property name="group">panel_icon_toggle_and_menu_radio</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckButton" id="panel_icon_menu_button_radio">
+        <property name="label" translatable="1">With popup menu</property>
+        <property name="action-name">settings.panel-icon-type</property>
+        <property name="action-target">&apos;menu-button&apos;</property>
+        <property name="group">panel_icon_toggle_and_menu_radio</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckButton" id="panel_icon_toggle_button_radio">
+        <property name="label" translatable="1">Toggle button</property>
+        <property name="action-name">settings.panel-icon-type</property>
+        <property name="action-target">&apos;toggle-button&apos;</property>
+        <property name="group">panel_icon_toggle_and_menu_radio</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckButton" id="panel_icon_toggle_and_menu_radio">
+        <property name="label" translatable="1">Toggle button and popup menu</property>
+        <property name="action-name">settings.panel-icon-type</property>
+        <property name="action-target">&apos;toggle-and-menu-button&apos;</property>
+      </object>
+    </child>
+  </template>
+</interface>

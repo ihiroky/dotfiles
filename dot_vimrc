@@ -1,0 +1,18 @@
+scriptencoding utf-8
+set encoding=utf-8
+set number
+set tabstop=2
+set softtabstop=2
+set shiftwidth=2
+set expandtab
+set smarttab
+set autoindent
+set smartindent
+set showmatch
+set list
+set listchars=tab:»-,trail:-,eol:↲,extends:»,precedes:«,nbsp:%
+syntax on
+colorscheme elflord
+" colorscheme solarized
+
+autocmd FileType yaml setlocal ts=2 sts=2 sw=2 expandtab
