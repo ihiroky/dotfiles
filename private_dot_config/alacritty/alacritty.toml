@@ -1,0 +1,6 @@
+[window]
+dimensions = { columns = 120, lines = 48 }
+opacity = 0.9
+
+[font]
+size = 14
