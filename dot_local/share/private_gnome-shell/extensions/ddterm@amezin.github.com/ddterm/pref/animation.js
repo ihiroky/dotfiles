@@ -17,22 +17,19 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import Gtk from 'gi://Gtk';
 
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const {
+import {
     bind_sensitive,
     bind_widgets,
     insert_settings_actions,
     set_scale_value_format,
     ui_file_uri
-} = Me.imports.ddterm.pref.util;
+} from './util.js';
 
-var AnimationWidget = GObject.registerClass({
+export const AnimationWidget = GObject.registerClass({
     GTypeName: 'DDTermPrefsAnimation',
     Template: ui_file_uri('prefs-animation.ui'),
     Children: [
@@ -80,5 +77,3 @@ var AnimationWidget = GObject.registerClass({
         return this.gettext_context.gettext('Animation');
     }
 });
-
-/* exported AnimationWidget */

@@ -17,21 +17,18 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import Pango from 'gi://Pango';
+import Clutter from 'gi://Clutter';
+import St from 'gi://St';
 
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Pango = imports.gi.Pango;
-const Clutter = imports.gi.Clutter;
-const St = imports.gi.St;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
+import * as ModalDialog from 'resource:///org/gnome/shell/ui/modalDialog.js';
 
-const Main = imports.ui.main;
-const MessageTray = imports.ui.messageTray;
-const ModalDialog = imports.ui.modalDialog;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { find_package_installer } = Me.imports.ddterm.shell.packagemanager;
+import { find_package_installer } from './packagemanager.js';
 
 const DetailsDialog = GObject.registerClass({
     Properties: {
@@ -72,7 +69,12 @@ const DetailsDialog = GObject.registerClass({
         label.clutter_text.use_markup = true;
 
         viewport.add_child(label);
-        scroll_area.add_actor(viewport);
+
+        if (scroll_area.add_actor)
+            scroll_area.add_actor(viewport);
+        else
+            scroll_area.add_child(viewport);
+
         this.contentLayout.add_child(scroll_area);
 
         this.addButton({
@@ -98,14 +100,35 @@ const DetailsDialog = GObject.registerClass({
 
 const Notification = GObject.registerClass({
 }, class DDTermNotification extends MessageTray.Notification {
-    _init(params) {
-        const { source, title, body, use_body_markup = false, ...rest } = params;
+    constructor(params) {
+        if (MessageTray.Notification.length === 1) {
+            super(params);
+        } else {
+            const { source, title, body, use_body_markup = false, ...rest } = params;
 
-        super._init(source, title, body, { bannerMarkup: use_body_markup, ...rest });
+            super(source, title, body, { bannerMarkup: use_body_markup, ...rest });
+        }
+    }
+
+    setUrgency(urgency) {
+        if (super.setUrgency)
+            super.setUrgency(urgency);
+        else
+            super.urgency = urgency;
+    }
+
+    setForFeedback(value) {
+        if (super.setForFeedback)
+            super.setForFeedback(value);
+        else
+            super.for_feedback = value;
     }
 
     show() {
-        this.source.showNotification(this);
+        if (this.source.addNotification)
+            this.source.addNotification(this);
+        else
+            this.source.showNotification(this);
     }
 });
 
@@ -214,7 +237,7 @@ const MissingDependenciesNotification = GObject.registerClass({
     }
 });
 
-var Notifications = GObject.registerClass({
+export const Notifications = GObject.registerClass({
     Properties: {
         'gettext-context': GObject.ParamSpec.jsobject(
             'gettext-context',
@@ -240,7 +263,10 @@ var Notifications = GObject.registerClass({
         const title = this.gettext_context.gettext('ddterm');
         const icon_name = 'utilities-terminal';
 
-        this._source = new MessageTray.Source(title, icon_name);
+        if (MessageTray.Source.length === 1)
+            this._source = new MessageTray.Source({ title, icon_name });
+        else
+            this._source = new MessageTray.Source(title, icon_name);
 
         this._source.connect('destroy', () => {
             this._source = null;
@@ -296,5 +322,3 @@ var Notifications = GObject.registerClass({
         this._source?.destroy(reason);
     }
 });
-
-/* exported Notifications */

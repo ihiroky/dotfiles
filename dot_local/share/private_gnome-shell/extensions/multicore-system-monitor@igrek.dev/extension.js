@@ -1,18 +1,14 @@
-const { GObject, St } = imports.gi;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const Main = imports.ui.main;
-const Mainloop = imports.mainloop;
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
-const Clutter = imports.gi.Clutter;
-const GLib = imports.gi.GLib;
+import St from 'gi://St';
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
 
-const {
-    gettext: _,
-} = ExtensionUtils;
 const PI = 3.141592654;
-const GETTEXT_DOMAIN = 'multicore-system-monitor';
+const METADATA_NAME = 'multicore-system-monitor';
+const METADATA_UUID = 'multicore-system-monitor@igrek.dev';
 
 const COLOR_BACKGROUND = parseColor('#000000');
 const CORE_COLORS = [
@@ -39,9 +35,9 @@ const COLOR_MEM_BUFFERS = parseColor('#767676');
 const COLOR_MEM_DIRTY = parseColor('#F18A00');
 const COLOR_SWAP = parseColor('#1F613060');
 
-const STAT_REFRESH_INTERVAL = 2000; // in milliseconds
+const STAT_REFRESH_INTERVAL = 2; // in seconds
 const CPU_GRAPH_WIDTH = 48;
-const MEMORY_GRAPH_WIDTH = 40;
+const MEMORY_GRAPH_WIDTH = 44;
 const MEMORY_PIE_ORIENTATION = 0;
 const PANEL_POSITION = 10; // higher - rightmost
 const DEBUG = false;
@@ -147,16 +143,15 @@ function parseColor(hashString) {
     return Clutter.Color.from_string(hashString)[1];
 }
 
-class Extension {
-    constructor(uuid) {
-        this._uuid = uuid;
-        this.memStats = {};
-        ExtensionUtils.initTranslations(GETTEXT_DOMAIN);
+export default class MyExtension extends Extension {
+    constructor(metadata) {
+        super(metadata);
     }
 
     enable() {
         console.log('Enabling multicore system monitor.');
-        this._indicator = new PanelMenu.Button(0.0, Me.metadata.name, false);
+        this.memStats = {};
+        this._indicator = new PanelMenu.Button(0.0, METADATA_NAME, false);
         
         this.area = new St.DrawingArea({
             reactive: false,
@@ -165,28 +160,32 @@ class Extension {
             style_class: 'graph-drawing-area',
         });
         this.area.connect('repaint', this._draw.bind(this));
-        this.timeout = Mainloop.timeout_add(STAT_REFRESH_INTERVAL, this.periodicUpdate.bind(this));
+        this.timeout = GLib.timeout_add_seconds(
+            GLib.PRIORITY_DEFAULT,
+            STAT_REFRESH_INTERVAL,
+            this.periodicUpdate.bind(this)
+        );
         
         let menuBox = new St.BoxLayout({ vertical: true });
         this.dynamicLabel = new St.Label({ text: "" });
-        menuBox.add(this.dynamicLabel);
+        menuBox.add_child(this.dynamicLabel);
         let menuItem = new PopupMenu.PopupBaseMenuItem({
             reactive: false,
             can_focus: false,
         });
-        menuItem.actor.add_actor(menuBox);
+        menuItem.actor.add_child(menuBox);
         
         this._indicator.menu.addMenuItem(menuItem);
         
         this._indicator.add_child(this.area);
-        Main.panel.addToStatusArea(Me.metadata.uuid, this._indicator, PANEL_POSITION, Main.panel._rightBox);
+        Main.panel.addToStatusArea(METADATA_UUID, this._indicator, PANEL_POSITION, Main.panel._rightBox);
     }
 
     _draw() {
         let [totalWidth, h] = this.area.get_surface_size();
         let cr = this.area.get_context();
         // clear background
-        Clutter.cairo_set_source_color(cr, COLOR_BACKGROUND);
+        cr.setSourceColor(COLOR_BACKGROUND);
         cr.rectangle(0, 0, totalWidth, h);
         cr.fill();
 
@@ -204,7 +203,7 @@ class Extension {
         for (let core = 0; core < cores; core++) {
             const usage = DEBUG_RANDOM ? Math.random() : cpuUsage[core + 1].usage;
             const colorIndex = core % CORE_COLORS.length;
-            Clutter.cairo_set_source_color(cr, CORE_COLORS[colorIndex]);
+            cr.setSourceColor(CORE_COLORS[colorIndex]);
             cr.rectangle(xOffset + core * binW, yOffset + h * (1 - usage), binW, h * usage);
             cr.fill();
         }
@@ -215,17 +214,18 @@ class Extension {
 
         const centerX = xOffset + w/2;
         const centerY = yOffset + h/2;
-        const radius = h/2;
+        const smallDim = Math.min(w, h);
+        const radius = smallDim/2;
         let angle = 0;
         
         const totalMem = this.memStats.total;
-        Clutter.cairo_set_source_color(cr, COLOR_MEM_USED);
+        cr.setSourceColor(COLOR_MEM_USED);
         angle = this._drawMemoryPiece(cr, centerX, centerY, radius, angle, this.memStats.used / totalMem);
-        Clutter.cairo_set_source_color(cr, COLOR_MEM_CACHED);
+        cr.setSourceColor(COLOR_MEM_CACHED);
         angle = this._drawMemoryPiece(cr, centerX, centerY, radius, angle, this.memStats.cached / totalMem);
-        Clutter.cairo_set_source_color(cr, COLOR_MEM_BUFFERS);
+        cr.setSourceColor(COLOR_MEM_BUFFERS);
         angle = this._drawMemoryPiece(cr, centerX, centerY, radius, angle, this.memStats.buffers / totalMem);
-        Clutter.cairo_set_source_color(cr, COLOR_MEM_DIRTY);
+        cr.setSourceColor(COLOR_MEM_DIRTY);
         angle = this._drawMemoryPiece(cr, centerX, centerY, radius, angle, this.memStats.dirtyWriteback / totalMem);
 
         this._drawMemorySwap(cr, xOffset, yOffset, w, h); // Swap fill
@@ -234,6 +234,7 @@ class Extension {
     _drawMemoryPiece(cr, centerX, centerY, radius, startFraction, fraction) {
         const startAngle = (startFraction + MEMORY_PIE_ORIENTATION) * 2 * PI;
         const endAngle = startAngle + fraction * 2 * PI;
+        cr.setLineWidth(1);
         cr.moveTo(centerX, centerY);
         cr.arc(centerX, centerY, radius, startAngle, endAngle);
         cr.lineTo(centerX, centerY);
@@ -242,7 +243,7 @@ class Extension {
     }
 
     _drawMemorySwap(cr, xOffset, yOffset, w, h) {
-        Clutter.cairo_set_source_color(cr, COLOR_SWAP);
+        cr.setSourceColor(COLOR_SWAP);
         const swapUsage = this.memStats.swapUsage || 0;
         cr.rectangle(xOffset, yOffset + h * (1 - swapUsage), w, h * swapUsage);
         cr.fill();
@@ -282,7 +283,7 @@ class Extension {
 
     destroy() {
         if (this.timeout) {
-            Mainloop.source_remove(this.timeout);
+            GLib.source_remove(this.timeout);
             this.timeout = null;
             console.log('Multicore: Periodic refresh disabled')
         }
@@ -297,8 +298,4 @@ class Extension {
         cpuUsage = [];
         this.memStats = {};
     }
-}
-
-function init(meta) {
-    return new Extension(meta.uuid);
 }

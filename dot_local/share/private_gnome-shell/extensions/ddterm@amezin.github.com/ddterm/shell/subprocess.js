@@ -17,16 +17,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import GnomeDesktop from 'gi://GnomeDesktop';
+import Meta from 'gi://Meta';
 
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const GnomeDesktop = imports.gi.GnomeDesktop;
-const Meta = imports.gi.Meta;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { sd_journal_stream_fd } = Me.imports.ddterm.shell.sd_journal;
+import { sd_journal_stream_fd } from './sd_journal.js';
 
 const SIGTERM = 15;
 
@@ -134,8 +131,6 @@ class TeeLogCollector {
 
     async collect() {
         await this._promise;
-        if (!globalThis.TextDecoder)
-            return this._collected.map(line => imports.byteArray.toString(line)).join('\n');
         const decoder = new TextDecoder();
         return this._collected.map(line => decoder.decode(line)).join('\n');
     }
@@ -149,7 +144,7 @@ function make_wayland_client(subprocess_launcher) {
     }
 }
 
-var Subprocess = GObject.registerClass({
+export const Subprocess = GObject.registerClass({
     Properties: {
         'journal-identifier': GObject.ParamSpec.string(
             'journal-identifier',
@@ -250,9 +245,7 @@ var Subprocess = GObject.registerClass({
     }
 });
 
-/* exported Subprocess */
-
-var WaylandSubprocess = GObject.registerClass({
+export const WaylandSubprocess = GObject.registerClass({
     Properties: {
         'wayland-client': GObject.ParamSpec.object(
             'wayland-client',
@@ -277,5 +270,3 @@ var WaylandSubprocess = GObject.registerClass({
         return this._wayland_client;
     }
 });
-
-/* exported WaylandSubprocess */

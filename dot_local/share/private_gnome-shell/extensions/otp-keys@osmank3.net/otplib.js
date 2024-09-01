@@ -1,6 +1,7 @@
-const { GLib, Secret } = imports.gi;
+import GLib from 'gi://GLib';
+import Secret from 'gi://Secret';
 
-var OtpLib = class {
+export default class OtpLib {
     constructor() {
         this._otpSchema = new Secret.Schema(
             "org.gnome.shell.extensions.otp-keys",

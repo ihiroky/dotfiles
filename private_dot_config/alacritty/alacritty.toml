@@ -3,4 +3,6 @@ dimensions = { columns = 120, lines = 48 }
 opacity = 0.9
 
 [font]
+normal = { family = "Migu 1M", style = "Regular" }
+offset = { x = 0, y = 2 }
 size = 14

@@ -1,13 +1,10 @@
-const Meta = imports.gi.Meta;
-const Shell = imports.gi.Shell;
-const Main = imports.ui.main;
-
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
 
 // from https://stackoverflow.com/questions/12325405/gnome-shell-extension-key-binding
 
-var KeyboardShortcuts = class KeyboardShortcuts {
+export const KeyboardShortcuts = class {
   constructor() {}
 
   enable() {
@@ -28,7 +25,7 @@ var KeyboardShortcuts = class KeyboardShortcuts {
   listenFor(accelerator, callback) {
     let action = global.display.grab_accelerator(accelerator, 0);
     if (action == Meta.KeyBindingAction.NONE) {
-      log(`Unable to grab accelerator ${accelerator}`);
+      console.log(`Unable to grab accelerator ${accelerator}`);
       return;
     }
 
@@ -41,7 +38,7 @@ var KeyboardShortcuts = class KeyboardShortcuts {
       callback: callback,
     };
 
-    log(`Grabbed ${accelerator}`);
+    console.log(`Grabbed ${accelerator}`);
   }
 
   unlisten() {
@@ -61,7 +58,7 @@ var KeyboardShortcuts = class KeyboardShortcuts {
     if (grabber) {
       grabber.callback();
     } else {
-      log(`No listeners ${action}`);
+      console.log(`No listeners ${action}`);
     }
   }
 };

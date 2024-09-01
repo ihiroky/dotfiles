@@ -17,16 +17,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import Gtk from 'gi://Gtk';
 
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
+import { bind_widgets, ui_file_uri } from './util.js';
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { bind_widgets, ui_file_uri } = Me.imports.ddterm.pref.util;
-
-var CompatibilityWidget = GObject.registerClass({
+export const CompatibilityWidget = GObject.registerClass({
     GTypeName: 'DDTermPrefsCompatibility',
     Template: ui_file_uri('prefs-compatibility.ui'),
     Children: [
@@ -78,5 +75,3 @@ var CompatibilityWidget = GObject.registerClass({
         return this.gettext_context.gettext('Compatibility');
     }
 });
-
-/* exported CompatibilityWidget */

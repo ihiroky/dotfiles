@@ -30,4 +30,5 @@ gi_require({
     'Gdk': '3.0',
     'Pango': '1.0',
     'Vte': '2.91',
+    'Handy': '1',
 });

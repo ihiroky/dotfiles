@@ -17,16 +17,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
 
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
+import { Subprocess } from './subprocess.js';
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { Subprocess } = Me.imports.ddterm.shell.subprocess;
-
-var Service = GObject.registerClass({
+export const Service = GObject.registerClass({
     Properties: {
         'bus': GObject.ParamSpec.object(
             'bus',
@@ -195,5 +192,3 @@ var Service = GObject.registerClass({
         }
     }
 });
-
-/* exported Service */

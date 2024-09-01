@@ -17,10 +17,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
-
-const GLib = imports.gi.GLib;
-const Gio = imports.gi.Gio;
+import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
 
 /* We only care about Linux here, because otherwise it won't be systemd */
 const SOL_SOCKET = 1;
@@ -37,7 +35,7 @@ function dup(fd) {
 }
 
 /* like gio-launch-desktop */
-function sd_journal_stream_fd(identifier, priority = LOG_INFO, level_prefix = false) {
+export function sd_journal_stream_fd(identifier, priority = LOG_INFO, level_prefix = false) {
     if (priority < 0)
         priority = 0;
 
@@ -84,5 +82,3 @@ function sd_journal_stream_fd(identifier, priority = LOG_INFO, level_prefix = fa
         throw ex;
     }
 }
-
-/* exported sd_journal_stream_fd */

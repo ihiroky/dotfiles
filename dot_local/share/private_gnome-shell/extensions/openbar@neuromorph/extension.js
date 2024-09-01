@@ -17,19 +17,25 @@
  * author: neuromorph
  */
 
-/* exported Openbar init */
+/* exported Openbar */
 
-const { St, Gio, GdkPixbuf, Meta, Clutter } = imports.gi;
-const Main = imports.ui.main;
-const PanelMenu = imports.ui.panelMenu;
-const Calendar = imports.ui.calendar;
-const LayoutManager = imports.ui.layout;
-const Config = imports.misc.config;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const Quantize = Me.imports.quantize;
-const AutoThemes = Me.imports.autothemes;
-const StyleSheets = Me.imports.stylesheets;
+import St from 'gi://St';
+import Gio from 'gi://Gio';
+import GdkPixbuf from 'gi://GdkPixbuf';
+import Meta from 'gi://Meta';
+import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as Calendar from 'resource:///org/gnome/shell/ui/calendar.js';
+import * as LayoutManager from 'resource:///org/gnome/shell/ui/layout.js';
+import * as Config from 'resource:///org/gnome/shell/misc/config.js';
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Quantize from './quantize.js';
+import * as AutoThemes from './autothemes.js';
+import * as StyleSheets from './stylesheets.js';
+
+Gio._promisify(Gio.File.prototype, "copy_async", "copy_finish");
 
 // ConnectManager class to manage connections for events to trigger Openbar style updates
 // This class is modified from Floating Panel extension (Thanks Aylur!)
@@ -72,48 +78,44 @@ class ConnectManager{
 
     disconnectAll(){
         this.connections.forEach(c => {
-            c.obj.disconnect(c.id);
+            // console.log('Disconnect All - c.id: ', c.id);
+            if(c.obj && c.id > 0)
+                c.obj.disconnect(c.id);
         })
     }
 }
 
 
 // Openbar Extension main class
-class Extension {
-    constructor() {
+export default class Openbar extends Extension {
+    constructor(metadata) {
+        super(metadata);
         this._settings = null;
         this._bgSettings = null;
         this._intSettings = null;
+        this._hcSettings = null;
         this._connections = null;
         this._injections = [];
     }
 
-    backgroundPalette() {
-        // Get the latest background image file (from picture-uri Or picture-uri-dark)
-        let pictureUri = this._settings.get_string('bguri');
+    // Generate a color palette from desktop background image
+    getPaletteFromImage(pictureUri) {
         let pictureFile = Gio.File.new_for_uri(pictureUri);
     
         // Load the image into a pixbuf
-        let pixbuf = GdkPixbuf.Pixbuf.new_from_file(pictureFile.get_path());
+        let pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(pictureFile.get_path(), 1000, -1);
         let nChannels = pixbuf.n_channels;
     
         // Get the width, height and pixel count of the image
         let width = pixbuf.get_width();
         let height = pixbuf.get_height();
         let pixelCount = width*height;
-        let offset;
-
-        // Sample about a million pixels to quantize
-        if(pixelCount <= 1000000)
-            offset = 1;
-        else
-            offset = parseInt(pixelCount/1000000);
+        let offset = 1;
 
         // Get the pixel data as an array of bytes
         let pixels = pixbuf.get_pixels();
     
-        let pixelArray = [];
-    
+        let pixelArray = [];    
         // Loop through the pixels and get the rgba values
         for (let i = 0, index, r, g, b, a; i < pixelCount; i = i + offset) {
             index = i * nChannels;
@@ -129,46 +131,89 @@ class Extension {
             if (typeof a === 'undefined' || a >= 125) {
                 if (!(r > 250 && g > 250 && b > 250) && !(r < 5 && g < 5 && b < 5)) {
                     pixelArray.push([r, g, b]);
+                    // pixelArray.push(Material.argbFromRgb(r, g, b));
                 }
             }
         }
         // console.log('pixelCount, pixelarray len ', pixelCount, pixelArray.length);
-    
-        // Generate color palette of 6 colors using Quantize to get prominant colors
-        const cmap6 = Quantize.quantize(pixelArray, 6);
-        const palette6 = cmap6? cmap6.palette() : null;
-
-        let i = 1;
-        palette6?.forEach(color => {
-            this._settings.set_strv('prominent'+i, [String(color[0]), String(color[1]), String(color[2])]);
-            i++;
-        });
 
         // Generate color palette of 12 colors using Quantize to possibly get all colors for color-button
         const cmap12 = Quantize.quantize(pixelArray, 12);
         const palette12 = cmap12? cmap12.palette() : null;
-    
-        i = 1;
-        palette12?.forEach(color => {
-            this._settings.set_strv('palette'+i, [String(color[0]), String(color[1]), String(color[2])]);
-            i++;
-        });
+        const count12 = cmap12? cmap12.colorCounts() : null;
 
-        // Toggle setting 'bg-change' to indicate background change
-        let bgchange = this._settings.get_boolean('bg-change');
-        if(bgchange)
-            this._settings.set_boolean('bg-change', false);
-        else
-            this._settings.set_boolean('bg-change', true);
+        // Sort palette12 and count12 arrays by count descending
+        palette12?.sort((a, b) => count12[palette12.indexOf(b)] - count12[palette12.indexOf(a)]);
+        count12?.sort((a, b) => b - a);
+        // console.log('palette12 sorted ', palette12, 'count12 sorted ', count12);
 
-        // Apply auto theme for new background palette if auto-refresh enabled and theme-variation set
-        const theme = this._settings.get_string('autotheme');
-        const variation = this._settings.get_string('variation');
-        const autoRefresh = this._settings.get_boolean('autotheme-refresh')
-        if(autoRefresh && theme != 'Select Theme' && variation != 'Select Variation')
-            AutoThemes.autoApplyBGPalette(this);
+        return [palette12, count12];
     }
-    
+
+    backgroundPalette() {
+        // Get the latest background image file (from picture-uri and picture-uri-dark)
+        let pictureUriDark = this._settings.get_string('dark-bguri');
+        let pictureUriLight = this._settings.get_string('light-bguri');
+        const currentMode = this._intSettings.get_string('color-scheme');
+        let darklight, palette12, count12, pictureUri;
+        let uriArr = [pictureUriDark, pictureUriLight];
+        let sameUri = pictureUriDark == pictureUriLight;
+
+        for(let i = 0; i < uriArr.length; i++) {
+            darklight = (i==0) ? 'dark' : 'light';
+            pictureUri = uriArr[i];            
+            
+            if(pictureUri.endsWith('.xml') || pictureUri.endsWith('.XML')) 
+                continue;
+
+            // Generate palette only once if both URI are same
+            if(!sameUri || i == 0) {
+                [palette12, count12] = this.getPaletteFromImage(pictureUri);
+            }
+        
+            // Save palette and counts to settings
+            let paletteIdx = 1;
+            palette12?.forEach(color => {
+                // Save palette to dark/light settings
+                this._settings.set_strv(darklight+'-'+'palette'+paletteIdx, [String(color[0]), String(color[1]), String(color[2])]);
+                // Copy the palette for current mode to main settings
+                if( (sameUri && i == 0) || 
+                    (darklight == 'dark' && currentMode == 'prefer-dark') || 
+                    (darklight == 'light' && currentMode != 'prefer-dark'))
+                    this._settings.set_strv('palette'+paletteIdx, [String(color[0]), String(color[1]), String(color[2])]);
+                paletteIdx++;
+            });
+            let countIdx = 1;
+            count12?.forEach(count => {
+                this._settings.set_int('count'+countIdx, count12[countIdx-1]);
+                countIdx++;
+            });
+
+            // Toggle setting 'bg-change' to update the current mode palette in preferences window
+            if( (sameUri && i == 0) || 
+                (darklight == 'dark' && currentMode == 'prefer-dark') || 
+                (darklight == 'light' && currentMode != 'prefer-dark')) {
+                let bgchange = this._settings.get_boolean('bg-change');
+                if(bgchange)
+                    this._settings.set_boolean('bg-change', false);
+                else
+                    this._settings.set_boolean('bg-change', true);
+            }
+
+            // Apply auto theme for new background palette if auto-refresh enabled and theme set for this iteration (darklight)
+            const autoRefresh = this._settings.get_boolean('autotheme-refresh');
+            let theme;
+            if(darklight == 'dark')
+                theme = this._settings.get_string('autotheme-dark');
+            else
+                theme = this._settings.get_string('autotheme-light');
+            if(autoRefresh && theme != 'Select Theme') {
+                // console.log('Auto theme refresh for ', darklight);
+                AutoThemes.autoApplyBGPalette(this, darklight);
+            }
+        }
+    }
+
     _injectToFunction(parent, name, func) {
         let origin = parent[name];
         parent[name] = function () {
@@ -185,32 +230,67 @@ class Extension {
         else object[name] = injection[name];
     }
 
-    resetStyle(panel) {
-        Main.layoutManager.panelBox.remove_style_class_name('openbar');
-        panel.remove_style_class_name('openbar');
-
+    resetPanelStyle(panel) {
         const panelBoxes = [panel._leftBox, panel._centerBox, panel._rightBox];
         for(const box of panelBoxes) {
             for(const btn of box) {
-                btn.set_style(null);
-                btn.remove_style_class_name('openbar');
-                btn.child?.set_style(null);
-                btn.child?.remove_style_class_name('openbar');   
-
-                for(let j=1; j<=8; j++)
-                    btn.child?.remove_style_class_name('candy'+j);
-
+                // Remove candy classes
+                if(btn.child) {
+                    for(let j=1; j<=16; j++) {
+                        btn.child.remove_style_class_name('candy'+j);
+                        for(const child of btn.child.get_children()) {
+                            if(child.remove_style_class_name)
+                                child.remove_style_class_name('candy'+j);
+                            for(const gChild of child.get_children()) {
+                                if(gChild.remove_style_class_name)
+                                    gChild.remove_style_class_name('candy'+j);
+                            }
+                        }
+                    }
+                }
+                
+                // Remove trilands class
                 btn.child?.remove_style_class_name('trilands');
-                    
+                // Remove style class from Workspace Dots
                 if(btn.child?.constructor.name === 'ActivitiesButton') {
                     let list = btn.child.get_child_at_index(0);
                     for(const indicator of list) { 
                         let dot = indicator.get_child_at_index(0);
-                        dot?.set_style(null);
-                        dot?.remove_style_class_name('openbar');
+                        // dot?.set_style(null);
+                        if(dot?.remove_style_class_name)
+                            dot.remove_style_class_name('openbar');
                     }
-                }
+                }   
+                
+                // Remove style class from Button and Container
+                btn.remove_style_class_name('openbar');
+                btn.child?.remove_style_class_name('openbar');
             }
+        }
+        // Remove style class from Panel and PanelBox
+        Main.layoutManager.panelBox.remove_style_class_name('openbar');
+        panel.remove_style_class_name('openbar');      
+    }
+
+    unloadStylesheet() {
+        const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
+        const stylesheet = this.obarRunDir.get_child('stylesheet.css');
+        try { 
+            theme.unload_stylesheet(stylesheet); 
+        } 
+        catch (e) {
+            console.log('Openbar: Error unloading stylesheet: ', e);
+        }
+    }
+
+    loadStylesheet() {
+        const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
+        const stylesheet = this.obarRunDir.get_child('stylesheet.css');
+        try {
+            theme.load_stylesheet(stylesheet);
+        } 
+        catch (e) {
+            console.log('Openbar: Error loading stylesheet: ', e);
         }        
     }
 
@@ -219,9 +299,10 @@ class Extension {
         this.unloadStylesheet();
 
         // Load stylesheet
-        this.loadStylesheet();        
+        this.loadStylesheet();           
     }
 
+    // Add or remove 'openmenu' class
     applyMenuClass(obj, add) {
         if(!obj)
             return;
@@ -234,7 +315,8 @@ class Extension {
                 obj.remove_style_class_name('openmenu');
         }
     }
-    
+
+    // Add/Remove openmenu class to the object and its children/subchildren
     applyBoxStyles(box, add) {
         this.applyMenuClass(box, add);
 
@@ -261,6 +343,29 @@ class Extension {
         });
     }
 
+    // Add/Remove openmenu class to Notifications and Media message lists
+    // as well as to any other lists added by other extensions
+    applySectionStyles(list, add) {
+        list.get_children().forEach((section, idx) => { 
+            let msgList = section._list;
+            if(add && !this.msgListIds[idx]) { 
+                this.msgListIds[idx] = msgList?.connect(this.addedSignal, (container, actor) => {
+                    this.applyMenuClass(actor.child, add);
+                });
+                this.msgLists[idx] = msgList;
+            }
+            else if(!add && this.msgListIds[idx]) {
+                msgList?.disconnect(this.msgListIds[idx]);
+                this.msgListIds[idx] = null;
+                this.msgLists[idx] = null;
+            }
+            msgList?.get_children().forEach(msg => {
+                this.applyMenuClass(msg.child, add);
+            });
+        });
+    }
+
+    // Go through each panel button's menu to add/remove openmenu class to its children
     applyMenuStyles(panel, add) {
         const panelBoxes = [panel._leftBox, panel._centerBox, panel._rightBox];
         for(const box of panelBoxes) {
@@ -280,7 +385,7 @@ class Extension {
                     } 
                     // general case
                     else if(btn.child.menu?.box) {
-                        this.applyBoxStyles(btn.child.menu.box, add);                        
+                        this.applyBoxStyles(btn.child.menu.box, add);
                     }
 
                     // special case for Arc Menu, because it removes default menu and creates its own menu
@@ -295,11 +400,12 @@ class Extension {
                         if(ctxMenu.box)
                             this.applyBoxStyles(ctxMenu.box, add);
                     }
-                    
+
                     // DateMenu: Notifications (messages and media), DND and Clear buttons
                     //           Calendar Grid, Events, World Clock, Weather
                     if(btn.child.constructor.name === 'DateMenuButton') {
-                        const bin = btn.child.menu.box.get_child_at_index(0); // CalendarArea
+                        btn.child.y_align = Clutter.ActorAlign.CENTER;
+                        const bin = btn.child.menu.box.get_child_at_index(0); // CalendarArea 
                         const hbox = bin.get_child_at_index(0); // hbox with left and right sections
 
                         const msgList = hbox.get_child_at_index(0); // Left Pane/Section with notifications etc
@@ -309,35 +415,16 @@ class Extension {
                         const msgbox = msgList.get_child_at_index(1);
                         const msgScroll = msgbox.get_child_at_index(0);
                         const sectionList = msgScroll.child;
-                        const mediaSection = sectionList.get_child_at_index(0); // Media notifications (play music/video)
-                        this.mediaList = mediaSection?.get_child_at_index(0); 
-                        if(add && !this.mediaListId) {
-                            this.mediaListId = this.mediaList?.connect(this.addedSignal, (container, actor) => {
-                                this.applyMenuClass(actor.child, add);
+                        if(add) {
+                            this._connections.connect(sectionList, this.addedSignal, (container, actor) => {
+                                // console.log('section added: ', actor.constructor.name);
+                                this.applySectionStyles(sectionList, add);
                             });
                         }
-                        else if(!add && this.mediaListId) {
-                            this.mediaList?.disconnect(this.mediaListId);
-                            this.mediaListId = null;
-                        }
-                        this.mediaList?.get_children().forEach(media => {
-                            this.applyMenuClass(media.child, add);
-                        });                      
-
-                        const notifSection = sectionList.get_child_at_index(1); // Message notifications
-                        this.notifList = notifSection?.get_child_at_index(0);
-                        if(add && !this.notifListId) {
-                            this.notifListId = this.notifList?.connect(this.addedSignal, (container, actor) => {
-                                this.applyMenuClass(actor.child, add);
-                            });
-                        }
-                        else if(!add && this.notifListId) {
-                            this.notifList?.disconnect(this.notifListId);
-                            this.notifListId = null;
-                        }
-                        this.notifList?.get_children().forEach(message => {
-                            this.applyMenuClass(message.child, add);
-                        })
+                        else
+                            this._connections?.disconnect(sectionList, this.addedSignal);
+                        this.applySectionStyles(sectionList, add);
+                        
                         const msgHbox = msgbox.get_child_at_index(1); // hbox at botton for dnd and clear buttons
                         const dndBtn = msgHbox.get_child_at_index(1);
                         this.applyMenuClass(dndBtn, add);
@@ -377,35 +464,118 @@ class Extension {
         }
     }
 
-    setPanelBoxPosition(position, height, margin, borderWidth, bartype) {
-        let pMonitor = Main.layoutManager.primaryMonitor;
-        let panelBox = Main.layoutManager.panelBox; 
-        if(position == 'Top') {       
-            let topX = pMonitor.x;
-            let topY = pMonitor.y;
-            panelBox.set_position(topX, topY);
-            panelBox.set_size(pMonitor.width, -1);        
+    setPanelStyle(obj, key, sig_param, callbk_param) {
+        // console.log('setPanelStyle: ', String(obj), key, String(sig_param), callbk_param);
+        const panel = Main.panel;
+        const bartype = this._settings.get_string('bartype');
+        let candybar = this._settings.get_boolean('candybar');
+        // Reset Candybar in Overview. Called with 'showing' when set-Overview is disabled
+        if(key == 'showing') 
+            candybar = false;
+
+        const panelBoxes = [panel._leftBox, panel._centerBox, panel._rightBox];
+        let i = 0, idx, isFirst, firstIdx, lastIdx;
+        for(const box of panelBoxes) {
+            isFirst = true; idx = 0; firstIdx = 0; lastIdx = 0;
+            for(const btn of box) {
+                // Screen recording/share indicators use ButtonBox instead of Button
+                if(btn.child instanceof PanelMenu.Button || btn.child instanceof PanelMenu.ButtonBox) {
+                    btn.child.add_style_class_name('openbar');
+
+                    if(btn.child.visible) { 
+                        if(isFirst) {
+                            firstIdx = idx;
+                            isFirst = false;
+                        }
+                        lastIdx = idx;
+                        // console.log('Visible Child: ', String(btn.child));
+                        btn.add_style_class_name('openbar');
+                        btn.add_style_class_name('button-container');
+
+                        // Add candybar classes if enabled else remove them
+                        if(key == 'enabled' || key == 'candybar' || key == 'showing' || key == 'hiding'
+                            || key == 'notify::visible' || key == this.addedSignal || key == this.removedSignal) {
+                            for(let j=1; j<=16; j++) {
+                                btn.child.remove_style_class_name('candy'+j);
+                                for(const child of btn.child.get_children()) {
+                                    if(child.remove_style_class_name)
+                                        child.remove_style_class_name('candy'+j);
+                                    for(const gChild of child.get_children()) {
+                                        if(gChild.remove_style_class_name)
+                                            gChild.remove_style_class_name('candy'+j);
+                                    }
+                                }
+                            }
+                            i++; i = i%16; i = i==0? 16: i; // Cycle through candybar palette
+                            if(candybar) {
+                                btn.child.add_style_class_name('candy'+i);
+                                for(const child of btn.child.get_children()) {
+                                    if(child.add_style_class_name)
+                                        child.add_style_class_name('candy'+i);
+                                    for(const gChild of child.get_children()) {
+                                        if(gChild.add_style_class_name)
+                                            gChild.add_style_class_name('candy'+i);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Workspace dots
+                    if(btn.child.constructor.name === 'ActivitiesButton') {
+                        let list = btn.child.get_child_at_index(0);
+                        for(const indicator of list) { 
+                            let dot = indicator.get_child_at_index(0);
+                            // Some extensions can replace dot with text so add a check
+                            if(dot?.add_style_class_name) {
+                                dot.add_style_class_name('openbar');
+                                if(candybar)
+                                    dot.add_style_pseudo_class('candybar');
+                                else
+                                    dot.remove_style_pseudo_class('candybar');
+                            }
+                        }                        
+                    }
+                }  
+                
+                idx++;
+            }
+
+            // Add trilands pseudo/classes if enabled else remove them            
+            let btns = box.get_children();
+            for(let k=0; k<btns.length; k++) {
+                if (btns[k].child instanceof PanelMenu.Button || btns[k].child instanceof PanelMenu.ButtonBox) {
+                    if(bartype == 'Trilands') {
+                        btns[k].child.add_style_class_name('trilands');
+                        ['one-child', 'left-child', 'right-child', 'mid-child'].forEach(cls => {
+                            btns[k].child.remove_style_pseudo_class(cls);
+                        });
+                        if(k == firstIdx && k == lastIdx)
+                            btns[k].child.add_style_pseudo_class('one-child');
+                        else if(k == firstIdx)
+                            btns[k].child.add_style_pseudo_class('left-child');
+                        else if(k == lastIdx)
+                            btns[k].child.add_style_pseudo_class('right-child');
+                        else
+                            btns[k].child.add_style_pseudo_class('mid-child');
+                    }
+                    else {
+                        btns[k].child.remove_style_class_name('trilands');
+                    }
+                }
+            }
         }
-        else if(position == 'Bottom') {
-            margin = (bartype == 'Mainland')? 0: margin;
-            borderWidth = (bartype == 'Trilands' || bartype == 'Islands')? 0: borderWidth;  
-            let bottomX = pMonitor.x;
-            let bottomY = pMonitor.y + pMonitor.height - height - 2*borderWidth - 2*margin;
-            panelBox.set_position(bottomX, bottomY);
-            panelBox.set_size(pMonitor.width, height + 2*borderWidth + 2*margin);
-        }
-        
     }
 
     updatePanelStyle(obj, key, sig_param, callbk_param) { 
         // console.log('update called with ', key, sig_param, callbk_param);
-
         let panel = Main.panel;
 
         if(!this._settings)
             return;
 
-        if(key.startsWith('palette') || key.startsWith('prominent'))
+        if(key.startsWith('palette') || key.startsWith('prominent') ||
+            key.startsWith('dark-') || key.startsWith('light-'))
             return;
 
         // Generate background color palette
@@ -413,8 +583,9 @@ class Extension {
             const importExport = this._settings.get_boolean('import-export');
             if(!importExport) {
                 if(key == 'bgpalette')
-                    this.updateBguri();
-                this.backgroundPalette();
+                    this.updateBguri(this, 'updatePanelStyle');
+                else
+                    this.backgroundPalette();
             }
             return;
         }
@@ -423,60 +594,160 @@ class Extension {
             this.onWindowMaxBar();
             return;
         }
-        if(key == 'cust-margin-wmax') {
-            this.setWindowMaxBar('cust-margin-wmax');
+        if(key == 'cust-margin-wmax' || key == 'margin-wmax') {
+            this.setPanelBoxPosWindowMax(this.wmax, key);
             return;
         }
 
         if(key == 'trigger-autotheme') {
-            AutoThemes.autoApplyBGPalette(this);
+            AutoThemes.autoApplyBGPalette(this, 'dark');
+            AutoThemes.autoApplyBGPalette(this, 'light');
+            return;
+        }
+
+        if(callbk_param == 'color-scheme') {
+            this.gtkCSS = true;
+            StyleSheets.saveGtkCss(this, 'enable');
+            AutoThemes.onModeChange(this);
             return;
         }
 
         if(key == 'trigger-reload') {
-            StyleSheets.reloadStyle(this, Me);
+            StyleSheets.reloadStyle(this, this);
+            return;
+        }
+
+        // Reload stylesheet to pick up high contrast icons
+        if(callbk_param == 'high-contrast') {
+            StyleSheets.reloadStyle(this, this);
             return;
         }
 
         let bartype = this._settings.get_string('bartype');
+        // Set bgalpha as per bartype        
+        if(key == 'bartype') {
+            if(bartype == 'Trilands' || bartype == 'Islands') {                
+                this._settings.set_double('bgalpha', 0);
+            }
+            else {
+                this._settings.set_double('bgalpha', this.bgalpha);
+            }
+        }
+        if(bartype == 'Mainland' || bartype == 'Floating') {
+            this.bgalpha = this._settings.get_double('bgalpha');
+        }
         // Update triland classes if actor (panel button) removed in triland mode else return
-        if(key == this.removedSignal && bartype != 'Trilands') 
+        if(key == this.removedSignal && bartype != 'Trilands')
             return;
 
         let position = this._settings.get_string('position');
         let setOverview = this._settings.get_boolean('set-overview');
-        if(key == 'showing') {
-            if(!setOverview) { // Reset in overview, if 'overview' style disabled
-                this.resetStyle(panel);
-                this.applyMenuStyles(panel, false);
-                this.setPanelBoxPosition(position, panel.height, 0, 0, 'Mainland');
+        if(key == 'showing' || panel.has_style_pseudo_class('overview')) { 
+            if(setOverview) {
+                if(this.isObarReset) { // Overview style is enabled but obar was reset due to Fullscreen
+                    this.loadStylesheet();
+                    this.isObarReset = false;
+                }
             }
-            else if(this.isObarReset) { // Overview style is enabled but obar is reset due to Fullscreen
-                this.loadStylesheet();
-                this.isObarReset = false;
+            else {
+                // Reset Candybar style in overview if set-overview is disabled
+                let candybar = this._settings.get_boolean('candybar');
+                if(candybar)
+                    this.setPanelStyle(null, key);
             }
             return;           
         }
-        else if(key == 'hiding') {
-            this.onFullScreen(null, 'hiding')
+        else if(key == 'hiding') {            
+            if(this.styleUnloaded) {
+                this.loadStylesheet();
+                this.styleUnloaded = false;
+            }
+            this.setWindowMaxBar('hiding');
+            this.onFullScreen(null, 'hiding');
             // Continue to update style     
-        }            
+        }    
+        
+        if(key == 'set-fullscreen') {
+            const fullscreen = this._settings.get_boolean('set-fullscreen');
+            if(fullscreen && this.isObarReset) {
+                this.loadStylesheet();
+                this.isObarReset = false;
+            }
+            else if(!fullscreen && !this.isObarReset) {
+                this.onFullScreen(null, 'fullscreen');
+            }
+            return;
+        }
 
         if(key == 'reloadstyle') { // A toggle key to trigger update for reload stylesheet
             this.reloadStylesheet();
         }
+
+        // GTK Apps styles
+        let gtkKeys = ['apply-gtk', 'headerbar-hint', 'hbar-gtk3only', 'sidebar-hint', 'sbar-gradient', 'card-hint', 'winbradius', 'corner-radius', 
+            'winbcolor', 'winbalpha', 'winbwidth', 'traffic-light', 'menu-radius', 'sidebar-transparency', 'gtk-popover', 'mscolor', 'msalpha'];
+        if(gtkKeys.includes(key)) {
+            // console.log('Call saveGtkCss from extension for key: ', key);
+            this.gtkCSS = true;
+            if(key != 'mscolor' && key != 'msalpha') {
+                StyleSheets.saveGtkCss(this, 'enable');
+                return;
+            }
+        }
+        // Flatpak overrides
+        if(key == 'apply-flatpak') {
+            StyleSheets.saveFlatpakOverrides(this, 'enable');
+        }
         
         let menustyle = this._settings.get_boolean('menustyle');
         if(['reloadstyle', 'removestyle', 'menustyle'].includes(key) ||
-            key == this.addedSignal && callbk_param != 'message-banner' ||
-            key == 'hiding' && !setOverview) {
+            key == this.addedSignal && callbk_param != 'message-banner') {
             this.applyMenuStyles(panel, menustyle);
         }
+        if(key == 'menustyle') {
+            StyleSheets.reloadStyle(this, this);
+        }
         
-        if(key == 'mscolor')
+        // Auto set closest Yaru theme
+        if(key == 'mscolor' || key == 'set-yarutheme') {
+            let setYaruTheme = this._settings.get_boolean('set-yarutheme');
+            if(key == 'set-yarutheme') {
+                if(setYaruTheme) {
+                    this.yaruBackup = this._intSettings.get_string('gtk-theme');
+                    this.iconBackup = this._intSettings.get_string('icon-theme');
+                }
+                else {
+                    if(this.yaruBackup)
+                        this._intSettings.set_string('gtk-theme', this.yaruBackup);
+                    if(this.iconBackup)
+                        this._intSettings.set_string('icon-theme', this.iconBackup);
+                }
+            }
+            if(setYaruTheme) {
+                let colorScheme = this._intSettings.get_string('color-scheme');
+                let modeSuffix = colorScheme == 'prefer-dark' ? '-dark' : '';
+                let yaruColor = AutoThemes.getClosestYaruTheme(this);
+                yaruColor = (yaruColor == 'default') ? '' : '-'+yaruColor;
+                let yaruTheme = 'Yaru' + yaruColor + modeSuffix;
+                this._intSettings.set_string('gtk-theme', yaruTheme);
+                this._intSettings.set_string('icon-theme', yaruTheme);
+            }               
+        }
+
+        if(key == 'mscolor') {
             this.msSVG = true;
-        else if(key == 'mbgcolor' || key == 'smbgcolor' || key == 'smbgoverride')
-            this.bgSVG = true;
+            this.smfgSVG = true;
+        }
+        else if(key == 'mfgcolor' || key == 'mbgcolor' || key == 'smbgcolor' || key == 'smbgoverride') {
+            this.smfgSVG = true;
+        }
+        else if(key == 'mhcolor') {
+            this.mhSVG = true;
+        }
+
+        if(key == 'font') {
+            this._settings.set_boolean('autotheme-font', false);
+        }
 
         let menuKeys = ['trigger-reload', 'reloadstyle', 'removestyle', 'menustyle', 'mfgcolor', 'mfgalpha', 'mbgcolor', 'mbgaplha', 'mbcolor', 'mbaplha', 
         'mhcolor', 'mhalpha', 'mscolor', 'msalpha', 'mshcolor', 'mshalpha', 'smbgoverride', 'smbgcolor', 'qtoggle-radius', 'slider-height', 'mbg-gradient'];
@@ -484,7 +755,8 @@ class Extension {
         'bordertype', 'shcolor', 'shalpha', 'iscolor', 'isalpha', 'neon', 'shadow', 'font', 'default-font', 'hcolor', 'halpha', 'heffect', 'bgcolor-wmax', 
         'bgalpha-wmax', 'neon-wmax', 'boxcolor', 'boxalpha', 'autofg-bar', 'autofg-menu', 'width-top', 'width-bottom', 'width-left', 'width-right',
         'radius-topleft', 'radius-topright', 'radius-bottomleft', 'radius-bottomright'];
-        let keys = [...barKeys, ...menuKeys, 'autotheme', 'variation', 'autotheme-refresh', 'accent-override', 'accent-color'];
+        let keys = [...barKeys, ...menuKeys, 'autotheme-dark', 'autotheme-light', 'autotheme-refresh', 'accent-override', 'accent-color', 'apply-menu-shell', 
+        'dashdock-style', 'dbgcolor', 'dbgalpha', 'dborder', 'dshadow'];
         if(keys.includes(key)) {
             return;
         }    
@@ -495,12 +767,14 @@ class Extension {
         let height = this._settings.get_double('height');
         let margin = this._settings.get_double('margin'); 
     
-        // this.resetStyle(panel);
+        // this.resetPanelStyle(panel);
         Main.layoutManager.panelBox.add_style_class_name('openbar');
         panel.add_style_class_name('openbar');
 
         if(position == 'Bottom' || key == 'position' || key == 'monitors-changed') {
-            this.setPanelBoxPosition(position, height, margin, borderWidth, bartype);
+            // If WMax is On then ignore 'margin' changes (do not set position) else set position
+            if(!(this.wmax && key == 'margin'))
+                this.setPanelBoxPosition(position, height, margin, borderWidth, bartype);
         }
 
         if(key == 'monitors-changed')
@@ -514,73 +788,11 @@ class Extension {
             else
                 Main.messageTray._bannerBin.y_align = Clutter.ActorAlign.START;
         }
-        if(key == this.addedSignal && callbk_param == 'message-banner' && setNotifications) { 
+        if(key == this.addedSignal && callbk_param == 'message-banner' && setNotifications) {
             Main.messageTray._banner?.add_style_class_name('openmenu');
         }
 
-        const candybar = this._settings.get_boolean('candybar');
-        const panelBoxes = [panel._leftBox, panel._centerBox, panel._rightBox];
-        let i = 0;
-        for(const box of panelBoxes) {
-            for(const btn of box) {
-                // Screen recording/share indicators use ButtonBox instead of Button
-                if(btn.child instanceof PanelMenu.Button || btn.child instanceof PanelMenu.ButtonBox) {
-                    btn.child.add_style_class_name('openbar');                    
-
-                    if(btn.child.visible) {
-                        btn.add_style_class_name('openbar button-container');
-
-                        // Add candybar classes if enabled else remove them
-                        //[ToDo: should do only for keys: candybar, actor-added, actor-removed]
-                        for(let j=1; j<=8; j++)
-                            btn.child.remove_style_class_name('candy'+j);
-                        i++; i = i%8; i = i==0? 8: i; // Cycle through candybar palette
-                        if(candybar) {
-                            btn.child.add_style_class_name('candy'+i);
-                        }
-                    }
-
-                    // Workspace dots
-                    if(btn.child.constructor.name === 'ActivitiesButton') {
-                        let list = btn.child.get_child_at_index(0);
-                        for(const indicator of list) { 
-                            let dot = indicator.get_child_at_index(0);
-                            dot?.add_style_class_name('openbar');
-                        }                        
-                    }
-                    
-                    // Add trilands pseudo/classes if enabled else remove them
-                    // if(btn.child.has_style_class_name('trilands'))
-                    //     btn.child.remove_style_class_name('trilands');
-                    if(bartype == 'Trilands') {
-                        btn.child.add_style_class_name('trilands');
-
-                        if(btn == box.first_child && btn == box.last_child)
-                            btn.child.add_style_pseudo_class('one-child');
-                        else
-                            btn.child.remove_style_pseudo_class('one-child');
-                        
-                        if(btn == box.first_child && btn != box.last_child)
-                            btn.child.add_style_pseudo_class('left-child');
-                        else
-                            btn.child.remove_style_pseudo_class('left-child');
-                            
-                        if(btn != box.first_child && btn == box.last_child)
-                            btn.child.add_style_pseudo_class('right-child');
-                        else
-                            btn.child.remove_style_pseudo_class('right-child');
-                        
-                        if(btn != box.first_child && btn != box.last_child)
-                            btn.child.add_style_pseudo_class('mid-child');
-                        else
-                            btn.child.remove_style_pseudo_class('mid-child');
-                    }
-                    else
-                        btn.child.remove_style_class_name('trilands');                    
-                }                
-            }
-        }
-
+        this.setPanelStyle(null, key);
     }
 
     // QSAP: listen for addition of new panels
@@ -597,18 +809,58 @@ class Extension {
         });
     }
 
+    // Find the monitor which has the panel/panelBox
+    getPanelMonitor() {
+        let panelMonIndex = 0;
+        const LM = Main.layoutManager;
+        const monitors = LM.monitors;
+        const panelBox = LM.panelBox;
+        for(let i=0; i<monitors.length; i++) {
+            let monitor = monitors[i];  
+            if(panelBox.x >= monitor.x && panelBox.x < (monitor.x + monitor.width) &&
+                panelBox.y >= monitor.y && panelBox.y < (monitor.y + monitor.height)) {
+                panelMonIndex = i; 
+                break;
+            }
+        }
+        return [monitors[panelMonIndex], panelMonIndex];
+    }
+    
+    setPanelBoxPosition(position, height, margin, borderWidth, bartype) {
+        let panelMonitor = this.getPanelMonitor()[0];
+        let panelBox = Main.layoutManager.panelBox; 
+        if(position == 'Top') {       
+            let topX = panelMonitor.x;
+            let topY = panelMonitor.y;
+            panelBox.set_position(topX, topY);
+            panelBox.set_size(panelMonitor.width, -1);        
+        }
+        else if(position == 'Bottom') {
+            margin = (bartype == 'Mainland')? 0: margin;
+            borderWidth = (bartype == 'Trilands' || bartype == 'Islands')? 0: borderWidth;  
+            let panelBoxHeight = height + 2*borderWidth + 2*margin;
+            // Scale height by Display Scaling factor
+            panelBoxHeight = this.themeContext.scale_factor * panelBoxHeight;
+            let bottomX = panelMonitor.x;
+            let bottomY = panelMonitor.y + panelMonitor.height - panelBoxHeight;;
+            panelBox.set_position(bottomX, bottomY);
+            panelBox.set_size(panelMonitor.width, panelBoxHeight);
+        }        
+    }
+
+    // Set panelbox position for window max
+    // Need to set panelBox position since bar margins/height can change with WMax
     setPanelBoxPosWindowMax(wmax, signal) {
-        // Need to set panelBox position since bar margins/height can change with WMax
         const position = this._settings.get_string('position');
         if(position == 'Bottom') {
-            if(this.position == position && this.wmax == wmax && signal != 'cust-margin-wmax')
+            if(this.position == position && this.wmax == wmax && !(signal == 'cust-margin-wmax' || signal == 'margin-wmax'))
                 return;
             const bartype = this._settings.get_string('bartype');
             const borderWidth = this._settings.get_double('bwidth');
             const custMarginWmax = this._settings.get_boolean('cust-margin-wmax');
             const marginWMax = this._settings.get_double('margin-wmax');
             let margin = this._settings.get_double('margin');
-            let height = this._settings.get_double('height');            
+            const height = this._settings.get_double('height');            
             if(wmax) {
                 margin = custMarginWmax? marginWMax: margin;
             }
@@ -624,35 +876,46 @@ class Extension {
         }
     }
 
-    setWindowMaxBar(signal) {
-        if(!this._settings)
-            return;
+    // Check for maximized window on Panel monitor
+    setWindowMaxBar(obj, signal, sig2) {
+        // Retain wmax status as-is in Overview (do nothing here)
+        if(!this._settings || Main.panel.has_style_pseudo_class('overview'))
+            return;  
+
         const wmaxbar = this._settings.get_boolean('wmaxbar');
         if(!wmaxbar) {
-            Main.panel.remove_style_pseudo_class('windowmax');
+            if(Main.panel.has_style_pseudo_class('windowmax')) {
+                Main.panel.remove_style_pseudo_class('windowmax');
+                this.setPanelBoxPosWindowMax(false, signal);
+            }                
             return;
         }
         
+        // Find out index of the monitor which has the panel/panelBox
+        let panelMonIndex = this.getPanelMonitor()[1];
+
+        // Get valid windows maximized on the monitor with panel
         const workspace = global.workspace_manager.get_active_workspace();
         const windows = workspace.list_windows().filter(window =>
-            window.get_monitor() == Main.layoutManager.primaryMonitor.index
-            && window.showing_on_its_workspace()
-            && !window.is_hidden()
-            && window.get_window_type() !== Meta.WindowType.DESKTOP
-            // exclude Desktop Icons NG
-            && window.get_gtk_application_id() !== "com.rastersoft.ding"
-            && (window.maximized_horizontally 
-                || window.maximized_vertically) 
+            window.get_monitor() == panelMonIndex && 
+            window.showing_on_its_workspace() && 
+            !window.is_hidden() && 
+            window.get_window_type() !== Meta.WindowType.DESKTOP && // exclude Desktop
+            window.get_gtk_application_id() !== "com.rastersoft.ding" && // exclude Desktop Icons NG
+            (window.maximized_horizontally || window.maximized_vertically) &&
+            !window.fullscreen
         );
+        // for(const window of windows)
+        //     console.log('window:', window.get_gtk_application_id());
 
         if(windows.length) {
             Main.panel.add_style_pseudo_class('windowmax');
-            this.setPanelBoxPosWindowMax(true, signal);          
+            this.setPanelBoxPosWindowMax(true, signal);
         }
         else {
             Main.panel.remove_style_pseudo_class('windowmax');
             this.setPanelBoxPosWindowMax(false, signal);
-        }                
+        }
     }
 
     onWindowAdded(obj, signal, windowActor){
@@ -688,6 +951,7 @@ class Extension {
         this.setWindowMaxBar(this.removedSignal);
     }
 
+    // Connect/disconnect window signals based on Window-Max bar On/Off
     onWindowMaxBar() {
         let wmaxbar = this._settings.get_boolean('wmaxbar');
         if(wmaxbar) {
@@ -711,70 +975,95 @@ class Extension {
         if(this._windowSignals) {
             for(const [windowActor, ids] of this._windowSignals) {
                 for(const id of ids) {
-                    windowActor.disconnect(id);
+                    // console.log('disconnectWindowSignals - id: ', id);
+                    if(windowActor && id > 0)
+                        windowActor.disconnect(id);
                 }
             }
         }
         this._windowSignals = null;
     }
 
-    unloadStylesheet() {
-        const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
-        const stylesheetFile = Me.dir.get_child('stylesheet.css');
-        try { 
-            theme.unload_stylesheet(stylesheetFile); 
-            delete Me.stylesheet;
-        } catch (e) {
-            console.log('Openbar: Error unloading stylesheet: ');
-            throw e;
-        }
-    }
-
-    loadStylesheet() {
-        const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
-        const stylesheetFile = Me.dir.get_child('stylesheet.css');
-        try {
-            theme.load_stylesheet(stylesheetFile);
-            Me.stylesheet = stylesheetFile;
-        } catch (e) {
-            console.log('Openbar: Error loading stylesheet: ');
-            throw e;
-        }
+    onFullScreen(obj, signal, sig_param, timeout = 0) {
+        if(this._settings.get_boolean('set-fullscreen'))
+            return;
         
-    }
-
-    onFullScreen(obj, signal, sig_param) {
-        const pMonitorIdx = Main.layoutManager.primaryIndex;        
-        if(global.display.get_monitor_in_fullscreen(pMonitorIdx)) {
-            this.unloadStylesheet();
-            this.isObarReset = true;
-        }
-        else if(this.isObarReset) {
-            this.loadStylesheet();                
-            this.isObarReset = false;            
-        }
+        this.onFullScrTimeoutId = 
+        // Timeout to allow other extensions to move panel to another monitor
+        setTimeout(() => {
+            // Check if panelBox is on the monitor which is in fullscreen
+            const LM = Main.layoutManager;
+            let panelBoxMonitor = this.getPanelMonitor()[0];
+            let panelFullMonFound = false;
+            for(const monitor of LM.monitors) {
+                if(monitor.inFullscreen && monitor == panelBoxMonitor) {
+                    this.unloadStylesheet();
+                    this.isObarReset = true;
+                    panelFullMonFound = true;
+                    break;
+                }
+            }
+            if(!panelFullMonFound && this.isObarReset) {
+                this.loadStylesheet();                
+                this.isObarReset = false;            
+            }
+        }, timeout);
     }
 
     updateBguri(obj, signal) {
-        const colorScheme = this._intSettings.get_string('color-scheme');
-        let bguriOld = this._settings.get_string('bguri');
-        let bguriNew;
-        if(colorScheme == 'prefer-dark')
-            bguriNew = this._bgSettings.get_string('picture-uri-dark');
-        else
-            bguriNew = this._bgSettings.get_string('picture-uri');
+        // console.log('update bguri called for signal ', signal);
+        // If the function is triggered multiple times in succession, ignore till timeout 
+        if(this.updatingBguri) {
+            // console.log('update bguri already in progress');
+            return;
+        }
+        this.updatingBguri = true;
+        this.updatingBguriId = setTimeout(() => {this.updatingBguri = false;}, 5000);
+        // console.log('==== Going ahead with bguri ====');
+        let colorScheme = this._intSettings.get_string('color-scheme');
+        if(colorScheme != this.colorScheme) {
+            this.colorScheme = colorScheme;
+            return;
+        }
         
-        // Gnome45+: if bgnd changed with right click on image file, 
-        // filepath (bguri) remains same, so manually call updatePanelStyle
-        if(bguriOld == bguriNew)
-            this.updatePanelStyle(this._settings, 'bguri');
-        else
+        this.updateBguriId = setTimeout(() => {
+            let bguriDark = this._bgSettings.get_string('picture-uri-dark');
+            let bguriLight = this._bgSettings.get_string('picture-uri');
+            this._settings.set_string('dark-bguri', bguriDark);
+            this._settings.set_string('light-bguri', bguriLight);
+
+            let bguriOld = this._settings.get_string('bguri');
+            let bguriNew;
+            if(colorScheme == 'prefer-dark')
+                bguriNew = bguriDark;
+            else
+                bguriNew = bguriLight;        
             this._settings.set_string('bguri', bguriNew);
+            
+            // Gnome45+: if bgnd changed with right click on image file, 
+            // filepath (bguri) remains same, so manually call updatePanelStyle
+            if(bguriOld == bguriNew) {
+                // console.log('bguriOld == bguriNew - calling updatePanelStyle for bguri');
+                this.updatePanelStyle(this._settings, 'bguri');
+            }
+        }, 200);
     }
 
+    // Connect multiple signals to ensure detecting background-change in all Gnome versions
     connectPrimaryBGChanged() {
         const pMonitorIdx = Main.layoutManager.primaryIndex;
         this._connections.connect(Main.layoutManager._bgManagers[pMonitorIdx], 'changed', this.updateBguri.bind(this));
+        this._connections.connect(this._bgSettings, 'changed::picture-uri', this.updateBguri.bind(this));
+        this._connections.connect(this._bgSettings, 'changed::picture-uri-dark', this.updateBguri.bind(this));
+        this._connections.connect(this._intSettings, 'changed::color-scheme', this.updatePanelStyle.bind(this), 'color-scheme');
+    }
+    
+    postStartup() {
+        this.setPanelStyle(null, 'post-startup');
+
+        this.postStartupId = setTimeout(() => {
+            this.reloadStylesheet();
+        }, 2500);
     }
 
     enable() {
@@ -785,19 +1074,40 @@ class Extension {
         // Get the top panel
         let panel = Main.panel;
 
-        this.msSVG = false;
-        this.bgSVG = false;
+        this.main = Main;
+        this.msSVG = true;
+        this.mhSVG = true;
+        this.smfgSVG = true;
+        this.gtkCSS = true;
         this.position = null;
         this.wmax = null;
         this.isObarReset = false;
         this.addedSignal = this.gnomeVersion > 45? 'child-added': 'actor-added';
         this.removedSignal = this.gnomeVersion > 45? 'child-removed': 'actor-removed';
+        this.calendarTimeoutId = null;
+        this.bgMgrTimeOutId = null;
+        this.onFullScrTimeoutId = null;
+        this.msgLists = [];
+        this.msgListIds = [];
+        this.styleUnloaded = false;
+        this.updatingBguri = false;
+        this.updatingBguriId = null;
+        this.updateBguriId = null;
+        this.postStartupId = null;
 
         // Settings for desktop background image (set bg-uri as per color scheme)
         this._bgSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.background' });
         this._intSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.interface' });
+        this._hcSettings = new Gio.Settings({ schema_id: 'org.gnome.desktop.a11y.interface' });
+        this.colorScheme = this._intSettings.get_string('color-scheme');
         
-        this._settings = ExtensionUtils.getSettings();  
+        // Get global theme context (for display scaling)
+        this.themeContext = St.ThemeContext.get_for_stage(global.stage);
+
+        this._settings = this.getSettings(); 
+        this.bgalpha = this._settings.get_double('bgalpha');
+        this._settings.set_boolean('import-export', false);
+        this._settings.set_boolean('pause-reload', false);
         // Connect to the settings changes
         this._settings.connect('changed', (settings, key) => {
             this.updatePanelStyle(settings, key);
@@ -806,10 +1116,13 @@ class Extension {
         let connections = [
             [ Main.overview, 'hiding', this.updatePanelStyle.bind(this) ],
             [ Main.overview, 'showing', this.updatePanelStyle.bind(this) ],
-            [ Main.sessionMode, 'updated', this.updatePanelStyle.bind(this) ],
             [ Main.layoutManager, 'monitors-changed', this.updatePanelStyle.bind(this) ],
             [ Main.messageTray._bannerBin, this.addedSignal, this.updatePanelStyle.bind(this), 'message-banner' ],
-            [ global.display, 'in-fullscreen-changed', this.onFullScreen.bind(this)],
+            [ global.display, 'in-fullscreen-changed', this.onFullScreen.bind(this), 100 ],
+            [ global.display, 'window-entered-monitor', this.setWindowMaxBar.bind(this), 'window-entered-monitor' ],
+            [ global.display, 'window-left-monitor', this.setWindowMaxBar.bind(this), 'window-left-monitor' ],
+            [ Main.layoutManager, 'startup-complete', this.postStartup.bind(this) ],
+            // [ Main.sessionMode, 'updated', this.updatePanelStyle.bind(this), 'session-mode-updated' ],
         ];
         // Connections for actor-added/removed OR child-added/removed as per Gnome version
         const panelBoxes = [panel._leftBox, panel._centerBox, panel._rightBox];
@@ -817,6 +1130,21 @@ class Extension {
             connections.push([panelBox, this.addedSignal, this.updatePanelStyle.bind(this)]);
             connections.push([panelBox, this.removedSignal, this.updatePanelStyle.bind(this)]);
         } 
+        // Connections for panel buttons notify::visible
+        for(const box of panelBoxes) {
+            for(const btn of box) {
+                if(btn.child instanceof PanelMenu.Button || btn.child instanceof PanelMenu.ButtonBox) {
+                    if(btn.child.constructor.name === 'ATIndicator' || btn.child.constructor.name === 'InputSourceIndicator'
+                        || btn.child.constructor.name === 'DwellClickIndicator') {
+                        connections.push([btn.child, 'notify::visible', this.setPanelStyle.bind(this)]);
+                    }
+                }
+            }
+        }
+        // Connection for Toggle Switch status shapes in High Contrast
+        if(this.gnomeVersion <= 45) {
+            connections.push( [ this._hcSettings, 'changed::high-contrast', this.updatePanelStyle.bind(this), 'high-contrast' ] );
+        }
         // Connection specific to QSAP extension (Quick Settings)
         if(this.gnomeVersion > 42) {
             let qSettings = Main.panel.statusArea.quickSettings;
@@ -829,7 +1157,7 @@ class Extension {
 
         // Setup all connections
         this._connections = new ConnectManager(connections);
-
+        
         // Setup connections for addition of new QSAP extension panels
         if(this.gnomeVersion > 42)
             this.setupLibpanel(null, 'enabled', null, Main.panel.statusArea.quickSettings.menu);
@@ -845,31 +1173,56 @@ class Extension {
         // Update calendar style on Calendar rebuild through fn injection
         const obar = this;
         this._injections["_rebuildCalendar"] = this._injectToFunction(
-            Calendar.Calendar.prototype,
+            Main.panel.statusArea.dateMenu._calendar,
             "_rebuildCalendar",
             function () {
+                if(!obar._settings) {
+                    return;
+                }
                 let menustyle = obar._settings.get_boolean('menustyle');
-                let setOverview = obar._settings.get_boolean('set-overview');
                 if(menustyle) {  
-                    if(setOverview || !Main.panel.has_style_pseudo_class('overview'))
-                        obar.applyCalendarGridStyle(this, menustyle);            
+                    obar.applyCalendarGridStyle(this, menustyle);                           
                 }
             }
         );
-        
+
         // Apply the initial style
         this.updatePanelStyle(null, 'enabled');
         let menustyle = this._settings.get_boolean('menustyle');
         this.applyMenuStyles(panel, menustyle);
 
-        // Cause stylesheet to save and reload on Enable
-        StyleSheets.reloadStyle(this, Me);
+        // OpenBar runtime directory
+        const userRunDir = GLib.get_user_runtime_dir();
+        this.obarRunDir = Gio.File.new_for_path(`${userRunDir}/io.github.neuromorph.openbar`);
+        this.obarAssetsDir = Gio.File.new_for_path(`${this.obarRunDir.get_path()}/assets`);
+        // Create dirs if missing
+        if(!this.obarAssetsDir.query_exists(null)) {
+            try {
+                this.obarAssetsDir.make_directory_with_parents(null);
+            }
+            catch(e) {
+                console.error('Error creating OpenBar runtime/assets directory: ' + e);
+            }
+        }
+        // Copy static assets (SVGs) to runtime dir
+        const assetsSrcDir = Gio.File.new_for_path(`${this.path}/media/assets`);
+        const iter = assetsSrcDir.enumerate_children('standard::name', Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null);
+        for(const fileInfo of iter) {
+            let srcFile = Gio.File.new_for_path(`${assetsSrcDir.get_path()}/${fileInfo.get_name()}`);
+            let dstFile = Gio.File.new_for_path(`${this.obarAssetsDir.get_path()}/${fileInfo.get_name()}`);
+            srcFile.copy_async(dstFile, Gio.FileCopyFlags.OVERWRITE | Gio.FileCopyFlags.TARGET_DEFAULT_PERMS, GLib.PRIORITY_DEFAULT, null, null);
+        }
+        
+        // Cause stylesheet to save and reload on Enable (also creates gtk css)
+        StyleSheets.reloadStyle(this, this);
+        // Add Open Bar Flatpak Overrides
+        StyleSheets.saveFlatpakOverrides(this, 'enable');
 
         // Set initial Window Max Bar
         this.onWindowMaxBar();
 
         // Set fullscreen mode if in Fullscreen when extension is enabled
-        this.onFullScreen(null, 'enabled', null);        
+        this.onFullScreen(null, 'enabled', null, 100); 
     }
 
     disable() {
@@ -878,51 +1231,70 @@ class Extension {
 
         this._connections.disconnectAll();
         this._connections = null;
-
+        
         this.disconnectWindowSignals();
 
         if(this.calendarTimeoutId) {
             clearTimeout(this.calendarTimeoutId);
             this.calendarTimeoutId = null;
         }
-        if(this.panelPosTimeoutId) {
-            clearTimeout(this.panelPosTimeoutId);
-            this.panelPosTimeoutId = null;
-        }        
-
+        if(this.updatingBguriId) {
+            clearTimeout(this.updatingBguriId);
+            this.updatingBguriId = null;
+        }
+        if(this.updateBguriId) {
+            clearTimeout(this.updateBguriId);
+            this.updateBguriId = null;
+        }
         if(this.bgMgrTimeOutId) {
             clearTimeout(this.bgMgrTimeOutId);
             this.bgMgrTimeOutId = null;
         }
+        if(this.onFullScrTimeoutId) {
+            clearTimeout(this.onFullScrTimeoutId);
+            this.onFullScrTimeoutId = null;
+        }
+        if(this.postStartupId) {
+            clearTimeout(this.postStartupId);
+            this.postStartupId = null;
+        }
 
-        if(this.mediaListId) {
-            this.mediaList?.disconnect(this.mediaListId);
-            this.mediaListId = null;
+        for(let i=0; i<this.msgLists.length; i++) {
+            if(this.msgListIds[i]) {
+                // console.log('Disable - msgListIds: ', this.msgListIds[i]);
+                if(this.msgLists[i] && this.msgListIds[i] > 0)
+                    this.msgLists[i].disconnect(this.msgListIds[i]);
+                this.msgListIds[i] = null;
+                this.msgLists[i] = null;
+            }
         }
-        if(this.notifListId) {
-            this.notifList?.disconnect(this.notifListId);
-            this.notifListId = null;
-        }
+        this.msgLists = [];
+        this.msgListIds = [];
 
         this._removeInjection(Calendar.Calendar.prototype, this._injections, "_rebuildCalendar");
         this._injections = [];
 
         // Reset the style for Panel and Menus
-        this.resetStyle(panel);
+        this.resetPanelStyle(panel);
         this.applyMenuStyles(panel, false);
-        // Reset panel position to Top
+
+        // Unload stylesheet
+        this.unloadStylesheet();
+
+        // Reset panel and banner position to Top
         this.setPanelBoxPosition('Top');
         Main.messageTray._bannerBin.y_align = Clutter.ActorAlign.START;
+        
+        // Clear/Restore Gtk css and Flatpak override
+        StyleSheets.saveGtkCss(this, 'disable');
+        StyleSheets.saveFlatpakOverrides(this, 'disable');
 
+        this.main = null;
         this._settings = null;
         this._bgSettings = null;
         this._intSettings = null;
-    }
-    
+        this._hcSettings = null;
+    }    
 }
 
-function init() {
-    return new Extension();
-}
  
-

@@ -17,24 +17,21 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import Adw from 'gi://Adw';
 
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Adw = imports.gi.Adw;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { AnimationWidget } = Me.imports.ddterm.pref.animation;
-const { BehaviorWidget } = Me.imports.ddterm.pref.behavior;
-const { ColorsWidget } = Me.imports.ddterm.pref.colors;
-const { CommandWidget } = Me.imports.ddterm.pref.command;
-const { CompatibilityWidget } = Me.imports.ddterm.pref.compatibility;
-const { PanelIconWidget } = Me.imports.ddterm.pref.panelicon;
-const { PositionSizeWidget } = Me.imports.ddterm.pref.positionsize;
-const { ScrollingWidget } = Me.imports.ddterm.pref.scrolling;
-const { ShortcutsWidget } = Me.imports.ddterm.pref.shortcuts;
-const { TabsWidget } = Me.imports.ddterm.pref.tabs;
-const { TextWidget } = Me.imports.ddterm.pref.text;
+import { AnimationWidget } from './animation.js';
+import { BehaviorWidget } from './behavior.js';
+import { ColorsWidget } from './colors.js';
+import { CommandWidget } from './command.js';
+import { CompatibilityWidget } from './compatibility.js';
+import { PanelIconWidget } from './panelicon.js';
+import { PositionSizeWidget } from './positionsize.js';
+import { ScrollingWidget } from './scrolling.js';
+import { ShortcutsWidget } from './shortcuts.js';
+import { TabsWidget } from './tabs.js';
+import { TextWidget } from './text.js';
 
 const Page = GObject.registerClass({
     Properties: {
@@ -68,7 +65,7 @@ const Page = GObject.registerClass({
     }
 });
 
-var WindowPage = GObject.registerClass({
+export const WindowPage = GObject.registerClass({
 }, class DDTermWindowPrefsPage extends Page {
     _init(params) {
         super._init({
@@ -88,9 +85,7 @@ var WindowPage = GObject.registerClass({
     }
 });
 
-/* exported WindowPage */
-
-var TerminalPage = GObject.registerClass({
+export const TerminalPage = GObject.registerClass({
 }, class DDTermTerminalPrefsPage extends Page {
     _init(params) {
         super._init({
@@ -111,9 +106,7 @@ var TerminalPage = GObject.registerClass({
     }
 });
 
-/* exported TerminalPage */
-
-var ShortcutsPage = GObject.registerClass({
+export const ShortcutsPage = GObject.registerClass({
 }, class DDTermShortcutsPrefsPage extends Page {
     _init(params) {
         super._init({
@@ -128,9 +121,7 @@ var ShortcutsPage = GObject.registerClass({
     }
 });
 
-/* exported ShortcutsPage */
-
-var MiscPage = GObject.registerClass({
+export const MiscPage = GObject.registerClass({
 }, class DDTermMiscPrefsPage extends Page {
     _init(params) {
         super._init({
@@ -144,5 +135,3 @@ var MiscPage = GObject.registerClass({
         this.add_widget(PanelIconWidget);
     }
 });
-
-/* exported MiscPage */

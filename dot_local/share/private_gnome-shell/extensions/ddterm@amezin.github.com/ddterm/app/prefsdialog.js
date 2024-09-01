@@ -17,7 +17,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
@@ -25,18 +24,7 @@ import Gtk from 'gi://Gtk';
 import Gettext from 'gettext';
 
 import { metadata, dir } from './meta.js';
-
-const [fakeext_import_path] = GLib.filename_from_uri(
-    GLib.Uri.resolve_relative(import.meta.url, 'fakeext', GLib.UriFlags.NONE)
-);
-
-imports.searchPath.unshift(fakeext_import_path);
-
-const { setCurrentExtension, installImporter } = imports.misc.extensionUtils;
-const Me = { dir, metadata };
-
-installImporter(Me);
-setCurrentExtension(Me);
+import { PrefsWidget } from '../pref/widget.js';
 
 export const PrefsDialog = GObject.registerClass({
     Properties: {
@@ -59,7 +47,7 @@ export const PrefsDialog = GObject.registerClass({
         this.set_icon_name('preferences-system');
 
         let widget;
-        widget = new Me.imports.ddterm.pref.widget.PrefsWidget({
+        widget = new PrefsWidget({
             settings: this.settings,
             gettext_context,
         });

@@ -1,19 +1,18 @@
-const GLib = imports.gi.GLib;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
+import GLib from 'gi://GLib';
 
 function getNvmeData (argv){
     const nvme = GLib.find_program_in_path('nvme')
-    return JSON.parse(GLib.spawn_command_line_sync(`${nvme} ${argv} -o json`)[1].toString())
+    return JSON.parse(new TextDecoder().decode(GLib.spawn_command_line_sync(`${nvme} ${argv} -o json`)[1]))
 }
 
-var NvmecliUtil  = class {
+export default class NvmecliUtil {
+
     constructor(callback) {
         this._nvmeDevices = [];
         try {
             this._nvmeDevices = getNvmeData("list")["Devices"]
         } catch (e) {
-            global.log('[FREON] Unable to find nvme devices: ' + e);
+            logError(e, '[FREON] Unable to find nvme devices');
         }
         this._updated = true;
     }

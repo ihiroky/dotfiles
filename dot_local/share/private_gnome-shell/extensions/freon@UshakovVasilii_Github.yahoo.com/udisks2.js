@@ -1,4 +1,4 @@
-const Gio = imports.gi.Gio;
+import Gio from 'gi://Gio';
 
 const UDisksDriveProxy = Gio.DBusProxy.makeProxyWrapper(
 '<node> \
@@ -30,7 +30,7 @@ const Async = {
 }
 
 // routines for handling of udisks2
-var UDisks2  = class {
+export default class UDisks2 {
 
     constructor(callback) {
         this._udisksProxies = [];
@@ -82,13 +82,13 @@ var UDisks2  = class {
                     // create the proxies object
                     let driveProxy = new UDisksDriveProxy(Gio.DBus.system, "org.freedesktop.UDisks2", obj, function(res, error) {
                         if (error) { //very unlikely - we even checked the interfaces before!
-                            global.log('[FREON] Could not create proxy on ' + obj + ':' + error);
+                            logError(error, '[FREON] Could not create proxy on ' + obj);
                             callback(null);
                             return;
                         }
                         let ataProxy = new UDisksDriveAtaProxy(Gio.DBus.system, "org.freedesktop.UDisks2", obj, function(res, error) {
                             if (error) {
-                                global.log('[FREON] Could not create proxy on ' + obj + ':' + error);
+                                logError(error, '[FREON] Could not create proxy on ' + obj);
                                 callback(null);
                                 return;
                             }
@@ -101,20 +101,12 @@ var UDisks2  = class {
                     callback(proxies.filter(function(a) { return a != null; }));
                 });
             } catch (e) {
-                global.log('[FREON] Could not find UDisks2 objects: ' + e);
+                logError(e, '[FREON] Could not find UDisks2 objects');
             }
         });
     }
 
     destroy(callback) {
-        for (let proxy of this._udisksProxies){
-            if(proxy.drive){
-                proxy.drive.run_dispose();
-            }
-            if(proxy.ata){
-                proxy.ata.run_dispose();
-            }
-        }
         this._udisksProxies = [];
     }
 

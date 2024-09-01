@@ -17,17 +17,15 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import Clutter from 'gi://Clutter';
+import Graphene from 'gi://Graphene';
+import Meta from 'gi://Meta';
+import Mtk from 'gi://Mtk';
 
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Clutter = imports.gi.Clutter;
-const Graphene = imports.gi.Graphene;
-const Meta = imports.gi.Meta;
-const Mtk = imports.gi.Meta;
-
-const Main = imports.ui.main;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 function get_monitor_manager() {
     if (Meta.MonitorManager.get)
@@ -36,7 +34,7 @@ function get_monitor_manager() {
     return global.backend.get_monitor_manager();
 }
 
-var WindowGeometry = GObject.registerClass({
+export const WindowGeometry = GObject.registerClass({
     Properties: {
         'target-rect': GObject.ParamSpec.boxed(
             'target-rect',
@@ -343,5 +341,3 @@ var WindowGeometry = GObject.registerClass({
         this._set_target_rect(target_rect);
     }
 });
-
-/* exported WindowGeometry */

@@ -17,6 +17,7 @@ IP Finder displays information about your public IP address, hostname, country, 
 * Proxy connections
 * VPN vendor applications
 * Manual static IP changes
+* Manually added connections
 
 
 #### IP Finder has added security

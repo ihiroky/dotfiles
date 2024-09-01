@@ -18,20 +18,18 @@
 
 /* exported init */
 
-const GETTEXT_DOMAIN = 'otp-keys';
+import St from 'gi://St';
+import GLib from 'gi://GLib';
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
 
-const { GObject, St, Clutter, GLib } = imports.gi;
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Main = imports.ui.main;
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
-
-const _ = ExtensionUtils.gettext;
-
-const ThisExtension = ExtensionUtils.getCurrentExtension();
-const Totp = ThisExtension.imports.totp;
-const OtpLib = ThisExtension.imports.otplib;
+import * as Totp from './totp.js';
+import OtpLib from './otplib.js';
 
 const SETTINGS_OTP_LIST = "secret-list";
 const SETTINGS_NOTIFY = "notifications";
@@ -61,14 +59,14 @@ class OtpMenuItem extends PopupMenu.PopupBaseMenuItem {
             text: this.human_readable_code(Totp.getCode(otp.secret, otp.digits, otp.period, otp.algorithm)),
             y_align: Clutter.ActorAlign.CENTER,
         });
-        this.add(code);
+        this.add_child(code);
 
         if (this._settings.get_boolean(SETTINGS_COPY_ICONS)) {
             let copyIcon = new St.Icon({
                 icon_name: "edit-copy-symbolic",
                 style_class: "popup-menu-icon",
             });
-            this.add(copyIcon);
+            this.add_child(copyIcon);
         }
 
         this.connect('activate', this._copyToClipboard.bind(this));
@@ -81,7 +79,7 @@ class OtpMenuItem extends PopupMenu.PopupBaseMenuItem {
         clipboard.set_text(St.ClipboardType.CLIPBOARD, code);
 
         if (this._settings.get_boolean(SETTINGS_NOTIFY))
-            Main.notify(_("Code copied to clipboard."));
+            Main.notify(_("Code copied to clipboard."), _("Copied code is: ") + code);
     }
 
     human_readable_code(code) {
@@ -104,7 +102,7 @@ class Indicator extends PanelMenu.Button {
 
         this._parent = parent;
         this._settings = settings;
-        this._otpLib = new OtpLib.OtpLib();
+        this._otpLib = new OtpLib();
 
         this.add_child(new St.Icon({
             icon_name: 'dialog-password-symbolic',
@@ -142,7 +140,7 @@ class Indicator extends PanelMenu.Button {
             let issuer = "otp-key";
             [username, issuer] = stringSecret.split(":");
             otp = this._otpLib.getOtp(username, issuer);
-            if (typeof otp == "object")
+            if (otp !== null)
                 this._otpList.push(otp);
         }
     }
@@ -165,7 +163,7 @@ class Indicator extends PanelMenu.Button {
 
         let preferences = new PopupMenu.PopupMenuItem(_("Preferences"));
         preferences.connect('activate', () => {
-            ExtensionUtils.openPrefs();
+            this._parent.openPreferences();
         });
         this.menu.addMenuItem(preferences);
     }
@@ -221,14 +219,9 @@ class Indicator extends PanelMenu.Button {
 });
 
 
-class Extension {
-    constructor(uuid) {
-        this._uuid = uuid;
-        ExtensionUtils.initTranslations(GETTEXT_DOMAIN);
-    }
-
+export default class OtpKeys extends Extension {
     enable() {
-        this._indicator = new Indicator(ThisExtension, ExtensionUtils.getSettings("org.gnome.shell.extensions.otp-keys"));
+        this._indicator = new Indicator(this, this.getSettings());
         Main.panel.addToStatusArea(this._uuid, this._indicator);
     }
 
@@ -236,8 +229,4 @@ class Extension {
         this._indicator.destroy();
         this._indicator = null;
     }
-}
-
-function init(meta) {
-    return new Extension(meta.uuid);
 }

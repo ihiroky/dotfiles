@@ -17,29 +17,26 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
 
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Meta = imports.gi.Meta;
-const Shell = imports.gi.Shell;
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { Extension } = Me.imports.ddterm.shell.compat;
-const Main = imports.ui.main;
-const MessageTray = imports.ui.messageTray;
-
-const { AppControl } = Me.imports.ddterm.shell.appcontrol;
-const { DBusApi } = Me.imports.ddterm.shell.dbusapi;
-const { WindowGeometry } = Me.imports.ddterm.shell.geometry;
-const { Installer } = Me.imports.ddterm.shell.install;
-const { Notifications } = Me.imports.ddterm.shell.notifications;
-const { PanelIconProxy } = Me.imports.ddterm.shell.panelicon;
-const { Service } = Me.imports.ddterm.shell.service;
-const { Subprocess, WaylandSubprocess } = Me.imports.ddterm.shell.subprocess;
-const { WindowManager } = Me.imports.ddterm.shell.wm;
-const { WindowMatch } = Me.imports.ddterm.shell.windowmatch;
+import { AppControl } from './appcontrol.js';
+import { DBusApi } from './dbusapi.js';
+import { WindowGeometry } from './geometry.js';
+import { Installer } from './install.js';
+import { Notifications } from './notifications.js';
+import { PanelIconProxy } from './panelicon.js';
+import { Service } from './service.js';
+import { Subprocess, WaylandSubprocess } from './subprocess.js';
+import { WindowManager } from './wm.js';
+import { WindowMatch } from './windowmatch.js';
 
 const APP_ID = 'com.github.amezin.ddterm';
 const APP_DBUS_PATH = '/com/github/amezin/ddterm';
@@ -415,7 +412,7 @@ class EnabledExtension {
     }
 }
 
-var DDTermExtension = class DDTermExtension extends Extension {
+export default class DDTermExtension extends Extension {
     constructor(meta) {
         super(meta);
 
@@ -494,6 +491,4 @@ var DDTermExtension = class DDTermExtension extends Extension {
         this.enabled_state?.disable();
         this.enabled_state = null;
     }
-};
-
-/* exported DDTermExtension */
+}

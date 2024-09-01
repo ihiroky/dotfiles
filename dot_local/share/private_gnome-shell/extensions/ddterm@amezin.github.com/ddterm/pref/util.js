@@ -17,14 +17,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
+import Gtk from 'gi://Gtk';
 
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-
-function set_scale_value_format(scale, format) {
+export function set_scale_value_format(scale, format) {
     const formatter = (_, value) => format.format(value);
 
     if (scale.set_format_value_func)
@@ -33,9 +30,7 @@ function set_scale_value_format(scale, format) {
         scale.connect('format-value', formatter);
 }
 
-/* exported set_scale_value_format */
-
-function bind_widget(settings, key, widget, flags = Gio.SettingsBindFlags.DEFAULT) {
+export function bind_widget(settings, key, widget, flags = Gio.SettingsBindFlags.DEFAULT) {
     if (!(flags & Gio.SettingsBindFlags.NO_SENSITIVITY)) {
         settings.bind_writable(key, widget, 'sensitive', false);
         flags |= Gio.SettingsBindFlags.NO_SENSITIVITY;
@@ -66,16 +61,12 @@ function bind_widget(settings, key, widget, flags = Gio.SettingsBindFlags.DEFAUL
         throw new Error(`Widget ${widget} of unsupported type for setting ${key}`);
 }
 
-/* exported bind_widget */
-
-function bind_widgets(settings, mapping) {
+export function bind_widgets(settings, mapping) {
     for (const [key, widget] of Object.entries(mapping))
         bind_widget(settings, key, widget);
 }
 
-/* exported bind_widgets */
-
-function bind_sensitive(settings, key, widget, invert = false) {
+export function bind_sensitive(settings, key, widget, invert = false) {
     let flags = Gio.SettingsBindFlags.GET;
 
     if (invert)
@@ -84,9 +75,7 @@ function bind_sensitive(settings, key, widget, invert = false) {
     settings.bind(key, widget, 'sensitive', flags);
 }
 
-/* exported bind_sensitive */
-
-function insert_settings_actions(widget, settings, keys) {
+export function insert_settings_actions(widget, settings, keys) {
     const group = new Gio.SimpleActionGroup();
 
     for (const key of keys)
@@ -96,11 +85,10 @@ function insert_settings_actions(widget, settings, keys) {
     return group;
 }
 
-/* exported insert_settings_actions */
-
-function ui_file_uri(name) {
-    // eslint-disable-next-line no-unreachable -- eslint doesn't understand our "preprocessor"
-    return `${Me.dir.get_uri()}/ddterm/pref/ui/gtk${Gtk.get_major_version()}/${name}`;
+export function ui_file_uri(name) {
+    return GLib.Uri.resolve_relative(
+        import.meta.url,
+        `ui/gtk${Gtk.get_major_version()}/${name}`,
+        GLib.UriFlags.NONE
+    );
 }
-
-/* exported ui_file_uri */

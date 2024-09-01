@@ -1,29 +1,21 @@
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
+import Gio from 'gi://Gio';
+import GObject from 'gi://GObject';
+import Gtk from 'gi://Gtk?version=4.0';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
-const Gettext = imports.gettext.domain(Me.metadata['gettext-domain']);
-const _ = Gettext.gettext;
+import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 const modelColumn = {
     label: 0,
     separator: 1
 }
 
-function init() {
-    ExtensionUtils.initTranslations();
-}
-
 var FreonPrefsWidget = new GObject.registerClass(class Freon_FreonPrefsWidget extends Gtk.Grid {
 
-    _init() {
-        super._init();
+    constructor(settings) {
+        super();
         this.margin = this.row_spacing = this.column_spacing = 20;
 
-        this._settings = ExtensionUtils.getSettings();
+        this._settings = settings;
 
         let i = 0;
         let j = 0;
@@ -61,7 +53,7 @@ var FreonPrefsWidget = new GObject.registerClass(class Freon_FreonPrefsWidget ex
             label : _('Show Icon on Panel')});
 
         this._addComboBox({
-            label: 'Temperature Unit',
+            label: _('Temperature Unit'),
             items : {centigrade : _("\u00b0C"), fahrenheit : _("\u00b0F")},
             key: 'unit', y : i++, x : j
         });
@@ -94,17 +86,17 @@ var FreonPrefsWidget = new GObject.registerClass(class Freon_FreonPrefsWidget ex
             label : 'lm-sensors',
             help : _('Read sensors from lm-sensors')});
 
-        // this._addSwitch({key : 'use-generic-freeipmi', y : i, x : j,
-        //     label : 'FreeIPMI',
-        //     help : _('Read sensors using ipmi-sensors from FreeIPMI')});
-        //
-        // this._addComboBox({
-        //     items : {
-        //         'direct' : 'Direct',
-        //         'sudo' : 'sudo' },
-        //     key: 'exec-method-freeipmi', y : i++, x : j + 1,
-        //     label: ''
-        // });
+        this._addSwitch({key : 'use-generic-freeipmi', y : i, x : j,
+            label : 'FreeIPMI',
+            help : _('Read sensors using ipmi-sensors from FreeIPMI')});
+
+        this._addComboBox({
+            items : {
+                'direct' : _('Direct'),
+                'pkexec' : 'pkexec' },
+            key: 'exec-method-freeipmi', y : i++, x : j + 1,
+            label: ''
+        });
 
         this._addSwitch({key : 'use-generic-liquidctl', y : i++, x : j,
             label : 'liquidctl',
@@ -137,7 +129,7 @@ var FreonPrefsWidget = new GObject.registerClass(class Freon_FreonPrefsWidget ex
 
         this._addSwitch({key : 'use-drive-smartctl', y : i++, x : j,
             label : 'smartctl',
-            help : _('Read drive sensors from smartctl from smartmontools')});
+            help : _('Read drive sensors using smartctl from smartmontools')});
 
         this._addSwitch({key : 'use-drive-nvmecli', y : i++, x : j,
             label : 'nvme-cli'});
@@ -230,6 +222,9 @@ var FreonPrefsWidget = new GObject.registerClass(class Freon_FreonPrefsWidget ex
     }
 });
 
-function buildPrefsWidget() {
-    return new FreonPrefsWidget();
+export default class extends ExtensionPreferences {
+
+    getPreferencesWidget() {
+        return new FreonPrefsWidget(this.getSettings());
+    }
 }

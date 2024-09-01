@@ -1,5 +1,5 @@
 /*
-    Copyright © 2024 Aleksandr Mezin
+    Copyright © 2020, 2021 Aleksandr Mezin
 
     This file is part of ddterm GNOME Shell extension.
 
@@ -17,30 +17,25 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import {
+    ExtensionPreferences
+} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const Gettext = imports.gettext;
-const Me = imports.misc.extensionUtils.getCurrentExtension();
+import {
+    WindowPage,
+    TerminalPage,
+    ShortcutsPage,
+    MiscPage
+} from './ddterm/pref/adw.js';
 
-function init() {
-    imports.misc.extensionUtils.initTranslations();
+export default class extends ExtensionPreferences {
+    fillPreferencesWindow(win) {
+        const settings = this.getSettings();
+        const gettext_context = this;
+
+        win.add(new WindowPage({ settings, gettext_context }));
+        win.add(new TerminalPage({ settings, gettext_context }));
+        win.add(new ShortcutsPage({ settings, gettext_context }));
+        win.add(new MiscPage({ settings, gettext_context }));
+    }
 }
-
-function buildPrefsWidget() {
-    return new Me.imports.ddterm.pref.widget.PrefsWidget({
-        settings: imports.misc.extensionUtils.getSettings(),
-        gettext_context: Gettext.domain(Me.metadata['gettext-domain']),
-    });
-}
-
-function  fillPreferencesWindow(win) {
-    const settings = imports.misc.extensionUtils.getSettings();
-    const gettext_context = Gettext.domain(Me.metadata['gettext-domain']);
-
-    win.add(new Me.imports.ddterm.pref.adw.WindowPage({ settings, gettext_context }));
-    win.add(new Me.imports.ddterm.pref.adw.TerminalPage({ settings, gettext_context }));
-    win.add(new Me.imports.ddterm.pref.adw.ShortcutsPage({ settings, gettext_context }));
-    win.add(new Me.imports.ddterm.pref.adw.MiscPage({ settings, gettext_context }));
-}
-
-/* exported init buildPrefsWidget fillPreferencesWindow */

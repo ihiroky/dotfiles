@@ -17,16 +17,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Meta from 'gi://Meta';
 
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const Meta = imports.gi.Meta;
+import { WindowMatchGeneric } from './windowmatch.js';
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { WindowMatchGeneric } = Me.imports.ddterm.shell.windowmatch;
-
-function is_wlclipboard(win) {
+export function is_wlclipboard(win) {
     if (win.get_client_type() !== Meta.WindowClientType.WAYLAND)
         return false;
 
@@ -39,19 +36,14 @@ function is_wlclipboard(win) {
         const [, bytes] = GLib.file_get_contents(`/proc/${pid}/cmdline`);
         const argv0_bytes = bytes.slice(0, bytes.indexOf(0));
         let argv0;
-        if (!globalThis.TextDecoder)
-            argv0 = imports.byteArray.toString(argv0_bytes);
-        else
-            argv0 = new TextDecoder().decode(argv0_bytes);
+        argv0 = new TextDecoder().decode(argv0_bytes);
         return ['wl-copy', 'wl-paste'].includes(GLib.path_get_basename(argv0));
     } catch {
         return false;
     }
 }
 
-/* exported is_wlclipboard */
-
-var WlClipboardActivator = GObject.registerClass({
+export const WlClipboardActivator = GObject.registerClass({
 }, class DDTermWlClipboardActivator extends WindowMatchGeneric {
     _init(params) {
         super._init({
@@ -80,5 +72,3 @@ var WlClipboardActivator = GObject.registerClass({
         return GLib.SOURCE_REMOVE;
     }
 });
-
-/* exported WlClipboardActivator */

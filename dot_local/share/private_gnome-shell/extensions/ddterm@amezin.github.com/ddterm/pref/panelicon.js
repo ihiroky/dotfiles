@@ -17,16 +17,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import Gtk from 'gi://Gtk';
 
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
+import { insert_settings_actions, ui_file_uri } from './util.js';
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { insert_settings_actions, ui_file_uri } = Me.imports.ddterm.pref.util;
-
-var PanelIconWidget = GObject.registerClass({
+export const PanelIconWidget = GObject.registerClass({
     GTypeName: 'DDTermPrefsPanelIcon',
     Template: ui_file_uri('prefs-panel-icon.ui'),
     Properties: {
@@ -55,5 +52,3 @@ var PanelIconWidget = GObject.registerClass({
         return this.gettext_context.gettext('Panel Icon');
     }
 });
-
-/* exported PanelIconWidget */

@@ -9,6 +9,8 @@
   </p>
 </p>
 
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/icedman)
+
 ![Contributors](https://img.shields.io/github/contributors/icedman/search-light?color=dark-green) ![Forks](https://img.shields.io/github/forks/icedman/search-light?style=social) ![Stargazers](https://img.shields.io/github/stars/icedman/search-light?style=social) ![Issues](https://img.shields.io/github/issues/icedman/search-light) ![License](https://img.shields.io/github/license/icedman/search-light) 
 
 ![First Release](https://raw.githubusercontent.com/icedman/search-light/main/screenshots/Screenshot%20from%202022-11-03%2011-53-28.png)
@@ -16,12 +18,22 @@
 
 This is a Gnome Shell extension that takes the apps search widget out of Overview. Like the macOS spotlight, or Alfred.
 
+### Notice
+
+* Gnome 46 port is ready for testing
+* Gnome 45 port is ready for testing
+* Gnome 44 and prior will be under g44 branch
+
 ### Features
 
 * Popup search box
 * Colors, background, borders customization
 * Blurred background
 * Multi-monitor support
+
+## Blurred background
+
+Blurred background feature requires **imagemagick** to be installed in the system which will generate the blurred image.
 
 ### Installation
 
@@ -38,11 +50,12 @@ $ make
 
 From Gnome Extensions Repository
 
-Visit [[repository](http://https://extensions.gnome.org/extension/5489/search-light/)](http://https://extensions.gnome.org/extension/5489/search-light/)
+Visit [repository](https://extensions.gnome.org/extension/5489/search-light/)
 
 ### Keybinding
 
-ctrl+cmd+space (change at the preference page)
+Ctrl+Cmd+Space (change at the preference page)
+Cmd - your Windows logo, or the command logo on mac. Linux also calls this the 'Super' key.
 
 ### Credits
 

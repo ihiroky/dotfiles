@@ -1,8 +1,8 @@
-const GLib = imports.gi.GLib;
+import GLib from 'gi://GLib';
 
 //Converts a base32 string into a hex string. The padding is optional
 //Based on the Pure JavaScript TOTP Code generator by Kevin Gut https://cable.ayra.ch/totp/
-function base32hex(data) {
+export function base32hex(data) {
     //Basic argument validation
     if (typeof(data) !== typeof("")) {
         throw new Error("Argument to base32hex() is not a string");
@@ -65,7 +65,7 @@ function base32hex(data) {
     }
 }
 
-function hex2bytes(hex) {
+export function hex2bytes(hex) {
     let bytes = [];
     for (let i=0; i < hex.length; i += 2) {
         let byte = parseInt(hex.substring(i, i+2), 16);
@@ -77,7 +77,7 @@ function hex2bytes(hex) {
     return bytes;
 }
 
-function getCode(key, size = 6, epoc = 30, hashlib = "sha1") {//hashlib: sha1,sha256,sha512
+export function getCode(key, size = 6, epoc = 30, hashlib = "sha1") {//hashlib: sha1,sha256,sha512
     let keyBytes = hex2bytes(base32hex(key));
     
     let now = parseInt(new Date().getTime() / 1000);

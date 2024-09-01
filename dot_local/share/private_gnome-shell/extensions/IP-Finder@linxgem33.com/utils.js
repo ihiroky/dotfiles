@@ -1,90 +1,106 @@
-/*
- * IP-Finder GNOME Extension by ArcMenu Team
- * https://gitlab.com/arcmenu-team/IP-Finder
- * 
- * ArcMenu Team
- * Andrew Zaech https://gitlab.com/AndrewZaech
- * LinxGem33 (Andy C) https://gitlab.com/LinxGem33
- * 
- * Find more from ArcMenu Team at
- * https://gitlab.com/arcmenu-team 
- * https://github.com/ArcMenu
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Soup from 'gi://Soup';
+
+Gio._promisify(Soup.Session.prototype, 'send_and_read_async');
+Gio._promisify(Gio.File.prototype, 'replace_contents_bytes_async', 'replace_contents_finish');
+
+export const ApiService = {
+    IP_INFO_IO: 0,
+    IP_API_COM: 1,
+};
+
+/**
  *
- *
- * This file is part of IP Finder gnome extension.
- * IP Finder gnome extension is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * IP Finder gnome extension is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with IP Finder gnome extension.  If not, see <http://www.gnu.org/licenses/>.
+ * @param {Soup.Session} session
+ * @param {object} soupParams
+ * @param {ApiService} apiService
+ * @returns {{data: object | null, error: string | null}} object containing the data of the IP details or error message on fail
  */
+export async function getIPDetails(session, soupParams,  apiService) {
+    let url;
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const {Gio, Soup} = imports.gi;
+    const params = soupParams;
+    if (apiService === ApiService.IP_API_COM) {
+        // See https://ip-api.com/docs/api:json for 'fields' details.
+        params.fields = '63479';
+        // ip-api.com free use API must use http. https api is a paid feature
+        url = 'http://ip-api.com/json/';
+    } else if (apiService === ApiService.IP_INFO_IO) {
+        url = 'https://ipinfo.io/json';
+    }
 
-const TILE_ZOOM = 9;
+    const message = Soup.Message.new_from_encoded_form(
+        'GET', `${url}`,
+        Soup.form_encode_hash(params)
+    );
 
-function _getIP(session, callback) {
-    let uri = new Soup.URI("https://ipinfo.io/ip");
-    var request = new Soup.Message({ method: 'GET', uri: uri });
-    session.queue_message(request, (session, message) => {
-        if (message.status_code !== Soup.Status.OK) {
-            callback(message.status_code, null);
-            return;
+    let data;
+    try {
+        const bytes = await session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null);
+
+        const decoder = new TextDecoder('utf-8');
+        data = JSON.parse(decoder.decode(bytes.get_data()));
+        if (message.statusCode === Soup.Status.OK) {
+            return {data};
+        } else {
+            console.log(`IP-Finder getIpDetails() failed with status code - ${message.statusCode}`);
+            const dataError = data['error'] ? `${data['error'].title}. ${data['error'].message}.` : data['message'];
+            if (dataError)
+                return {error: `${message.statusCode} - ${dataError}.`};
+            else
+                return {error: `${message.statusCode}`};
         }
-        let ip = request.response_body.data;
-        callback(null, ip);
-    });
+    } catch (e) {
+        console.log(`IP-Finder getIpDetails() error - ${e}`);
+        return {error: `IP-Finder getIpDetails() error - ${e}`};
+    }
 }
 
-function _getIPDetails(session, ipAddr, callback) {
-    let uri = new Soup.URI("https://ipinfo.io/" + ipAddr +"/json");
-    var request = new Soup.Message({ method: 'GET', uri: uri });
+/**
+ *
+ * @param {Array} coordinates
+ * @param {int} zoom
+ */
+export function getMapTileInfo(coordinates, zoom) {
+    const [lat, lon] = coordinates.split(', ').map(Number);
+    const xTile = Math.floor((lon + 180.0) / 360.0 * (1 << zoom));
+    const yTile = Math.floor((1.0 - Math.log(Math.tan(lat * Math.PI / 180.0) + 1.0 / Math.cos(lat * Math.PI / 180.0)) / Math.PI) / 2.0 * (1 << zoom));
 
-    session.queue_message(request, (session, message) => {
-        if (message.status_code !== Soup.Status.OK) {
-            callback(message.status_code, null);
-            return;
-        }
-
-        var ipDetailsJSON = request.response_body.data;
-        var ipDetails = JSON.parse(ipDetailsJSON);
-        callback(null, ipDetails);
-    });
+    return {zoom, xTile, yTile};
 }
 
-function _getTileNumber(loc) {
-    let zoom = TILE_ZOOM;
-    let [lat, lon] = loc.split(',');
-    lat = parseFloat(lat);
-    lon = parseFloat(lon);
-    let xtile = Math.floor((lon + 180.0) / 360.0 * (1 << zoom)); 
-    let ytile = Math.floor((1.0 - Math.log(Math.tan(lat * Math.PI / 180.0) + 1.0 / Math.cos(lat * Math.PI / 180.0)) / Math.PI) / 2.0 * (1 << zoom));
+/**
+ *
+ * @param {Soup.Session} session
+ * @param {object} soupParams
+ * @param {string} extensionPath
+ * @param {string} tileInfo
+ * @returns {{file: Gio.File | null, error: string | null}} object containing the map tile file or error message on fail
+ */
+export async function getMapTile(session, soupParams, extensionPath, tileInfo) {
+    const file = Gio.file_new_for_path(`${extensionPath}/icons/latest_map.png`);
 
-    return({z: zoom, x: xtile, y: ytile});
-}
+    const message = Soup.Message.new_from_encoded_form(
+        'GET',
+        `https://a.tile.openstreetmap.org/${tileInfo}.png`,
+        Soup.form_encode_hash(soupParams)
+    );
 
-function _getMapTile(session, tileInfo, callback) {
-    let file = Gio.file_new_for_path(Me.path + '/icons/latest_map.png');
+    let data;
+    try {
+        const bytes = await session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null);
 
-    let uri = new Soup.URI("https://a.tile.openstreetmap.org/" + tileInfo +".png");
-    var request = new Soup.Message({ method: 'GET', uri: uri });
-
-    session.queue_message(request, (session, message) => {
-        if (message.status_code !== Soup.Status.OK) 
-            callback(message.status_code);
-        else{
-            let fstream = file.replace(null, false, Gio.FileCreateFlags.NONE, null);
-            fstream.write_bytes(message.response_body_data, null);
-            fstream.close(null);
-            callback(null);
+        if (message.statusCode === Soup.Status.OK) {
+            data = bytes.get_data();
+            const [success, etag_] = await file.replace_contents_bytes_async(data, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+            return success ? {file} : {error: 'Error replacing map tile file.'};
+        } else {
+            console.log(`IP-Finder getMapTile() failed with status code - ${message.statusCode}`);
+            return {error: message.statusCode};
         }
-    });
+    } catch (e) {
+        console.log(`IP-Finder getMapTile() error - ${e}`);
+        return {error: message.statusCode};
+    }
 }

@@ -1,5 +1,5 @@
 /*
-    Copyright © 2024 Aleksandr Mezin
+    Copyright © 2023 Aleksandr Mezin
 
     This file is part of ddterm GNOME Shell extension.
 
@@ -18,8 +18,7 @@
 */
 
 import GObject from 'gi://GObject';
-import Gio from 'gi://Gio';
-import Gtk from 'gi://Gtk';
+import Handy from 'gi://Handy';
 
 export const ThemeManager = GObject.registerClass({
     Properties: {
@@ -35,45 +34,25 @@ export const ThemeManager = GObject.registerClass({
     _init(params) {
         super._init(params);
 
-        this._gtk_settings = Gtk.Settings.get_default();
-        this._desktop_settings = new Gio.Settings({
-            schema_id: 'org.gnome.desktop.interface',
-        });
-        this._has_desktop_color_schemes =
-            this._desktop_settings.settings_schema.has_key('color-scheme');
+        Handy.init();
+        this._style_manager = Handy.StyleManager.get_default();
 
         this.connect('notify::theme-variant', () => this._update());
-        this._desktop_settings.connect('changed::color-scheme', () => this._update());
         this._update();
     }
 
     _update() {
         switch (this.theme_variant) {
         case 'system':
-            if (!this._has_desktop_color_schemes) {
-                this._gtk_settings.reset_property('gtk-application-prefer-dark-theme');
-                break;
-            }
-
-            switch (this._desktop_settings.get_string('color-scheme')) {
-            case 'prefer-dark':
-                this._gtk_settings.gtk_application_prefer_dark_theme = true;
-                break;
-            case 'prefer-light':
-                this._gtk_settings.gtk_application_prefer_dark_theme = false;
-                break;
-            default:
-                this._gtk_settings.reset_property('gtk-application-prefer-dark-theme');
-            }
-
+            this._style_manager.color_scheme = Handy.ColorScheme.PREFER_LIGHT;
             break;
 
         case 'dark':
-            this._gtk_settings.gtk_application_prefer_dark_theme = true;
+            this._style_manager.color_scheme = Handy.ColorScheme.FORCE_DARK;
             break;
 
         case 'light':
-            this._gtk_settings.gtk_application_prefer_dark_theme = false;
+            this._style_manager.color_scheme = Handy.ColorScheme.FORCE_LIGHT;
             break;
 
         default:

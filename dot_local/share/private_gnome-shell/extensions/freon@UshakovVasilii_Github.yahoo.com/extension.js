@@ -1,34 +1,30 @@
-const St = imports.gi.St;
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
-const Main = imports.ui.main;
-const Util = imports.misc.util;
-const Mainloop = imports.mainloop;
-const Clutter = imports.gi.Clutter;
-const Gio = imports.gi.Gio;
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
+import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import St from 'gi://St';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 
-const SensorsUtil = Me.imports.sensorsUtil.SensorsUtil;
-// const FreeipmiUtil = Me.imports.freeipmiUtil.FreeipmiUtil;
-const LiquidctlUtil = Me.imports.liquidctlUtil.LiquidctlUtil;
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const NvidiaUtil = Me.imports.nvidiaUtil.NvidiaUtil;
-const BumblebeeNvidiaUtil = Me.imports.bumblebeeNvidiaUtil.BumblebeeNvidiaUtil;
-const AticonfigUtil = Me.imports.aticonfigUtil.AtiConfigUtil;
+import SensorsUtil from './sensorsUtil.js';
+import FreeipmiUtil from './freeipmiUtil.js';
+import LiquidctlUtil from './liquidctlUtil.js';
 
-const Udisks2Util = Me.imports.udisks2.UDisks2;
-const HddtempUtil = Me.imports.hddtempUtil.HddtempUtil;
-const SmartctlUtil = Me.imports.smartctlUtil.SmartctlUtil;
-const NvmecliUtil = Me.imports.nvmecliUtil.NvmecliUtil;
+import NvidiaUtil from './nvidiaUtil.js';
+import BumblebeeNvidiaUtil from './bumblebeeNvidiaUtil.js';
+import AticonfigUtil from './aticonfigUtil.js';
 
-const FreonItem = Me.imports.freonItem.FreonItem;
+import Udisks2Util from './udisks2.js';
+import HddtempUtil from './hddtempUtil.js';
+import SmartctlUtil from './smartctlUtil.js';
+import NvmecliUtil from './nvmecliUtil.js';
 
-const Gettext = imports.gettext.domain(Me.metadata['gettext-domain']);
-const _ = Gettext.gettext;
+import FreonItem from './freonItem.js';
 
 function _makeLogFunction(prefix) {
     return msg => {
@@ -54,11 +50,17 @@ function _makeLogFunction(prefix) {
     }
 }
 
-const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extends PanelMenu.Button {
-    _init() {
-        super._init(St.Align.START);
+class FreonMenuButton extends PanelMenu.Button {
 
-        this._settings = ExtensionUtils.getSettings();
+    static {
+        GObject.registerClass(this);
+    }
+
+    constructor(uuid, path, settings) {
+        super(0);
+
+        this._extension_uuid = uuid;
+        this._settings = settings;
 
         var _debugFunc = _makeLogFunction('DEBUG');
         this.debug = this._settings.get_boolean('debug') ? _debugFunc : () => {};
@@ -72,7 +74,7 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
         this._utils = {};
 
         this._initSensorsUtility();
-        // this._initFreeipmiUtility();
+        this._initFreeipmiUtility();
         this._initLiquidctlUtility();
 
         this._initNvidiaUtility();
@@ -84,17 +86,17 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
         this._initSmartctlUtility();
         this._initNvmecliUtility();
 
-        let temperatureIcon = Gio.icon_new_for_string(Me.path + '/icons/material-icons/material-temperature-symbolic.svg');
-        let voltageIcon = Gio.icon_new_for_string(Me.path + '/icons/freon-voltage-symbolic.svg');
+        let temperatureIcon = Gio.icon_new_for_string(path + '/icons/material-icons/material-temperature-symbolic.svg');
+        let voltageIcon = Gio.icon_new_for_string(path + '/icons/freon-voltage-symbolic.svg');
 
         this._sensorIcons = {
             'temperature' : temperatureIcon,
             'temperature-average' : temperatureIcon,
             'temperature-maximum' : temperatureIcon,
-            'gpu-temperature' : Gio.icon_new_for_string(Me.path + '/icons/material-icons/material-gpu-temperature-symbolic.svg'),
+            'gpu-temperature' : Gio.icon_new_for_string(path + '/icons/material-icons/material-gpu-temperature-symbolic.svg'),
             'drive-temperature' : Gio.icon_new_for_string('drive-harddisk-symbolic'),
             'voltage' : voltageIcon,
-            'fan' : Gio.icon_new_for_string(Me.path + '/icons/freon-fan-symbolic.svg'),
+            'fan' : Gio.icon_new_for_string(path + '/icons/freon-fan-symbolic.svg'),
             'power' : voltageIcon,
         }
 
@@ -114,7 +116,7 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
             this._createInitialIcon();
         }
 
-        this.add_actor(this._menuLayout);
+        this.add_child(this._menuLayout);
 
         this._settingChangedSignals = [];
 
@@ -134,8 +136,8 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
         this._addSettingChangedSignal('show-decimal-value', this._querySensors.bind(this));
 
         this._addSettingChangedSignal('use-generic-lmsensors', this._sensorsUtilityChanged.bind(this));
-        // this._addSettingChangedSignal('use-generic-freeipmi', this._freeipmiUtilityChanged.bind(this));
-        // this._addSettingChangedSignal('exec-method-freeipmi', this._freeipmiUtilityChanged.bind(this));
+        this._addSettingChangedSignal('use-generic-freeipmi', this._freeipmiUtilityChanged.bind(this));
+        this._addSettingChangedSignal('exec-method-freeipmi', this._freeipmiUtilityChanged.bind(this));
         this._addSettingChangedSignal('use-generic-liquidctl', this._liquidctlUtilityChanged.bind(this));
 
         this._addSettingChangedSignal('use-gpu-nvidia', this._nvidiaUtilityChanged.bind(this));
@@ -163,7 +165,7 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
 
         this._addTimer();
         this._updateUI(true);
-        this._updateUITimeoutId = Mainloop.timeout_add(250, () => {
+        this._updateUITimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 250, () => {
             this._updateUI();
             // readd to update queue
             return true;
@@ -178,7 +180,7 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
             if(gicon)
                 i.gicon = gicon;
 
-            this._menuLayout.add(i);
+            this._menuLayout.add_child(i);
         }
         let l = new St.Label({
             text: '\u26a0',  // ⚠, warning
@@ -187,13 +189,13 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
         l.set_style_class_name(showIcon ? 'freon-panel-icon-label' : 'freon-panel-no-icon-label');
 
         this._hotLabels[s] = l;
-        this._menuLayout.add(l);
+        this._menuLayout.add_child(l);
     }
 
     _createInitialIcon() {
         this._initialIcon = new St.Icon({ style_class: 'system-status-icon'});
         this._initialIcon.gicon = this._sensorIcons['gpu-temperature'];
-        this._menuLayout.add(this._initialIcon);
+        this._menuLayout.add_child(this._initialIcon);
     }
 
     _rerender(){
@@ -202,7 +204,7 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
     }
 
     _positionInPanelChanged(){
-        this.container.get_parent().remove_actor(this.container);
+        this.container.get_parent().remove_child(this.container);
 
         // small HACK with private boxes :)
         let boxes = {
@@ -255,24 +257,34 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
         this._updateUI(true);
     }
 
-    // _initFreeipmiUtility() {
-    //     if (this._settings.get_boolean('use-generic-freeipmi'))
-    //         this._utils.freeipmi = new FreeipmiUtil();
-    // }
-    //
-    // _destroyFreeipmiUtility() {
-    //     if(this._utils.freeipmi) {
-    //         this._utils.freeipmi.destroy();
-    //         delete this._utils.freeipmi;
-    //     }
-    // }
-    //
-    // _freeipmiUtilityChanged() {
-    //     this._destroyFreeipmiUtility();
-    //     this._initFreeipmiUtility();
-    //     this._querySensors();
-    //     this._updateUI(true);
-    // }
+    _initFreeipmiUtility() {
+        if (this._settings.get_boolean('use-generic-freeipmi'))
+        {
+            let exec_method = this._settings.get_string('exec-method-freeipmi');
+            try {
+                this._utils.freeipmi = new FreeipmiUtil(exec_method);
+            } catch (e) {
+                if (exec_method != 'direct') {
+                    this._settings.set_string('exec-method-freeipmi', 'direct');
+                    this._freeipmiUtilityChanged();
+                }
+            }
+        }
+    }
+
+    _destroyFreeipmiUtility() {
+        if(this._utils.freeipmi) {
+            this._utils.freeipmi.destroy();
+            delete this._utils.freeipmi;
+        }
+    }
+
+    _freeipmiUtilityChanged() {
+        this._destroyFreeipmiUtility();
+        this._initFreeipmiUtility();
+        this._querySensors();
+        this._updateUI(true);
+    }
 
     _initLiquidctlUtility() {
         if (this._settings.get_boolean('use-generic-liquidctl'))
@@ -429,12 +441,12 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
     }
 
     _updateTimeChanged(){
-        Mainloop.source_remove(this._timeoutId);
+        GLib.Source.remove(this._timeoutId);
         this._addTimer();
     }
 
     _addTimer(){
-        this._timeoutId = Mainloop.timeout_add_seconds(this._settings.get_int('update-time'), () => {
+        this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, this._settings.get_int('update-time'), () => {
             this._querySensors();
             // readd to update queue
             return true;
@@ -447,7 +459,7 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
 
     _onButtonDestroy(){
         this._destroySensorsUtility();
-        // this._destroyFreeipmiUtility();
+        this._destroyFreeipmiUtility();
         this._destroyLiquidctlUtility();
 
         this._destroyNvidiaUtility();
@@ -459,8 +471,8 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
         this._destroySmartctlUtility();
         this._destroyNvmecliUtility();
 
-        Mainloop.source_remove(this._timeoutId);
-        Mainloop.source_remove(this._updateUITimeoutId);
+        GLib.Source.remove(this._timeoutId);
+        GLib.Source.remove(this._updateUITimeoutId);
 
         for (let signal of this._settingChangedSignals){
             this._settings.disconnect(signal);
@@ -541,14 +553,14 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
                 powerInfo = powerInfo.concat(this._utils.sensors.power);
         }
 
-        // if (this._utils.freeipmi && this._utils.freeipmi.available) {
-        //     if (this._settings.get_boolean('show-temperature'))
-        //         sensorsTempInfo = sensorsTempInfo.concat(this._utils.freeipmi.temp);
-        //     if (this._settings.get_boolean('show-rotationrate'))
-        //         fanInfo = fanInfo.concat(this._utils.freeipmi.rpm);
-        //     if (this._settings.get_boolean('show-voltage'))
-        //         voltageInfo = voltageInfo.concat(this._utils.freeipmi.volt);
-        // }
+        if (this._utils.freeipmi && this._utils.freeipmi.available) {
+            if (this._settings.get_boolean('show-temperature'))
+                sensorsTempInfo = sensorsTempInfo.concat(this._utils.freeipmi.temp);
+            if (this._settings.get_boolean('show-rotationrate'))
+                fanInfo = fanInfo.concat(this._utils.freeipmi.rpm);
+            if (this._settings.get_boolean('show-voltage'))
+                voltageInfo = voltageInfo.concat(this._utils.freeipmi.volt);
+        }
 
         if (this._utils.liquidctl && this._utils.liquidctl.available) {
             if (this._settings.get_boolean('show-temperature'))
@@ -587,11 +599,12 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
             if (this._settings.get_boolean('show-temperature'))
                 driveTempInfo = driveTempInfo.concat(this._utils.nvmecli.temp);
 
-        sensorsTempInfo.sort(function(a,b) { return a.label.localeCompare(b.label) });
-        driveTempInfo.sort(function(a,b) { return a.label.localeCompare(b.label) });
-        fanInfo.sort(function(a,b) { return a.label.localeCompare(b.label) });
-        voltageInfo.sort(function(a,b) { return a.label.localeCompare(b.label) });
-        powerInfo.sort(function(a,b) { return a.label.localeCompare(b.label) });
+        const comparator = (a, b) => a.label.localeCompare(b.label, undefined, {numeric: true})
+        sensorsTempInfo.sort(comparator);
+        driveTempInfo.sort(comparator);
+        fanInfo.sort(comparator);
+        voltageInfo.sort(comparator);
+        powerInfo.sort(comparator);
 
         let tempInfo = gpuTempInfo.concat(sensorsTempInfo).concat(driveTempInfo);
 
@@ -777,7 +790,7 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
 
         let wiki = new PopupMenu.PopupBaseMenuItem();
         wiki.actor.add_child(new St.Label({ text: _("Go to the Freon wiki"), x_align: Clutter.ActorAlign.START, x_expand: true }));
-        wiki.connect('activate', function () {
+        wiki.connect('activate', () => {
             Util.spawn(["xdg-open", "https://github.com/UshakovVasilii/gnome-shell-extension-freon/wiki"]);
         });
 
@@ -785,8 +798,8 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
 
         let settings = new PopupMenu.PopupBaseMenuItem();
         settings.actor.add_child(new St.Label({ text: _("Sensor Settings"), x_align: Clutter.ActorAlign.START, x_expand: true }));
-        settings.connect('activate', function () {
-            Util.spawn(["gnome-extensions", "prefs", Me.metadata.uuid]);
+        settings.connect('activate', () => {
+            Util.spawn(["gnome-extensions", "prefs", this._extension_uuid]);
         });
 
         this.menu.addMenuItem(settings);
@@ -967,21 +980,18 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
     get positionInPanel(){
         return this._settings.get_string('position-in-panel');
     }
-});
-
-let freonMenu;
-
-function init(extensionMeta) {
-    ExtensionUtils.initTranslations();
 }
 
-function enable() {
-    freonMenu = new FreonMenuButton();
-    Main.panel.addToStatusArea('freonMenu', freonMenu);
-    freonMenu._positionInPanelChanged();
-}
+export default class extends Extension {
 
-function disable() {
-    freonMenu.destroy();
-    freonMenu = null;
+    enable() {
+        this._freonMenu = new FreonMenuButton(this.uuid, this.path, this.getSettings());
+        Main.panel.addToStatusArea('freonMenu', this._freonMenu);
+        this._freonMenu._positionInPanelChanged();
+    }
+
+    disable() {
+        this._freonMenu?.destroy();
+        this._freonMenu = null;
+    }
 }

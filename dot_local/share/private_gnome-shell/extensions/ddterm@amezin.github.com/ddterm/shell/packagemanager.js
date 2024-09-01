@@ -17,10 +17,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
-
-const GLib = imports.gi.GLib;
-const Gio = imports.gi.Gio;
+import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
 
 function shell_join(argv) {
     return argv.map(arg => GLib.shell_quote(arg)).join(' ');
@@ -130,7 +128,7 @@ async function find_package_manager_install_command(cancellable) {
     return null;
 }
 
-async function find_package_installer(cancellable) {
+export async function find_package_installer(cancellable) {
     const terminal_command = find_terminal_command();
 
     if (!terminal_command)
@@ -148,5 +146,3 @@ async function find_package_installer(cancellable) {
         GLib.spawn_close_pid(pid);
     };
 }
-
-/* exported find_package_installer */

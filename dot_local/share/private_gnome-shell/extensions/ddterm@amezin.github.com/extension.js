@@ -1,5 +1,5 @@
 /*
-    Copyright © 2024 Aleksandr Mezin
+    Copyright © 2022 Aleksandr Mezin
 
     This file is part of ddterm GNOME Shell extension.
 
@@ -17,15 +17,4 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const impl = Me.imports.ddterm.shell.extension;
-
-function init(meta) {
-    imports.misc.extensionUtils.initTranslations();
-
-    return new impl.DDTermExtension(meta);
-}
-
-/* exported init */
+export { default } from './ddterm/shell/extension.js';

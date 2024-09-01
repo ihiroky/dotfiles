@@ -17,16 +17,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import Mtk from 'gi://Mtk';
+import Shell from 'gi://Shell';
 
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Mtk = imports.gi.Meta;
-const Shell = imports.gi.Shell;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { AppControl } = Me.imports.ddterm.shell.appcontrol;
+import { AppControl } from './appcontrol.js';
 
 function report_dbus_error_async(e, invocation) {
     if (e instanceof GLib.Error) {
@@ -70,7 +67,7 @@ function meta_rect_to_variant(meta_rect) {
     ]);
 }
 
-var DBusApi = GObject.registerClass({
+export const DBusApi = GObject.registerClass({
     Properties: {
         'xml-file-path': GObject.ParamSpec.string(
             'xml-file-path',
@@ -190,5 +187,3 @@ var DBusApi = GObject.registerClass({
         this.dbus.flush();
     }
 });
-
-/* exported DBusApi */

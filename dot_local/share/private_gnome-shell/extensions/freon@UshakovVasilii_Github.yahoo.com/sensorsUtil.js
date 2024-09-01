@@ -1,9 +1,8 @@
-const GLib = imports.gi.GLib;
+import GLib from 'gi://GLib';
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const CommandLineUtil = Me.imports.commandLineUtil;
+import CommandLineUtil from './commandLineUtil.js';
 
-var SensorsUtil = class extends CommandLineUtil.CommandLineUtil {
+export default class SensorsUtil extends CommandLineUtil {
 
     constructor() {
         super();
@@ -26,10 +25,10 @@ var SensorsUtil = class extends CommandLineUtil.CommandLineUtil {
                     let errorRemoved = lineRemoved.replace(/ERROR.*Can't read/, "");
                         errorRemoved = errorRemoved.replace(/ERROR.*I\/O error/, "");
                         data = JSON.parse(errorRemoved);
-                    } catch (e) {
-                        global.log(e.toString());
-                        return [];
-                    }
+                } catch (e) {
+                    logError(e);
+                    return [];
+                }
             }
             this._data = data;
             callback();

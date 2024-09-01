@@ -17,18 +17,15 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
 
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-const Main = imports.ui.main;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { Service } = Me.imports.ddterm.shell.service;
-const { WindowGeometry } = Me.imports.ddterm.shell.geometry;
-const { WindowMatch } = Me.imports.ddterm.shell.windowmatch;
+import { Service } from './service.js';
+import { WindowGeometry } from './geometry.js';
+import { WindowMatch } from './windowmatch.js';
 
 async function wait_timeout(message, timeout_ms, cancellable = null) {
     await new Promise(resolve => {
@@ -78,7 +75,7 @@ async function wait_property(object, property, predicate, cancellable = null) {
     return result;
 }
 
-var AppControl = GObject.registerClass({
+export const AppControl = GObject.registerClass({
     Properties: {
         'service': GObject.ParamSpec.object(
             'service',
@@ -262,5 +259,3 @@ var AppControl = GObject.registerClass({
         return true;
     }
 });
-
-/* exported AppControl */

@@ -14,14 +14,15 @@
 
 'use strict';
 
-const GObject = imports.gi.GObject;
+import * as utils from '../utils.js';
 
-const _ = imports.gettext.domain('burn-my-windows').gettext;
+// We import some modules only in the Shell process as they are not available in the
+// preferences process. They are used only in the creator function of the ShaderFactory
+// which is only called within GNOME Shell's process.
+const ShaderFactory = await utils.importInShellOnly('./ShaderFactory.js');
+const Clutter       = await utils.importInShellOnly('gi://Clutter');
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me             = imports.misc.extensionUtils.getCurrentExtension();
-const utils          = Me.imports.src.utils;
-const ShaderFactory  = Me.imports.src.ShaderFactory.ShaderFactory;
+const _ = await utils.importGettext();
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // This effect overlays a glowing hexagonal grid over the window. The grid cells then   //
@@ -31,19 +32,14 @@ const ShaderFactory  = Me.imports.src.ShaderFactory.ShaderFactory;
 // The effect class can be used to get some metadata (like the effect's name or supported
 // GNOME Shell versions), to initialize the respective page of the settings dialog, as
 // well as to create the actual shader for the effect.
-var Hexagon = class {
+export default class Effect {
 
   // The constructor creates a ShaderFactory which will be used by extension.js to create
   // shader instances for this effect. The shaders will be automagically created using the
   // GLSL file in resources/shaders/<nick>.glsl. The callback will be called for each
   // newly created shader instance.
   constructor() {
-    this.shaderFactory = new ShaderFactory(this.getNick(), (shader) => {
-      // We import Clutter in this function as it is not available in the preferences
-      // process. This creator function of the ShaderFactory is only called within GNOME
-      // Shell's process.
-      const Clutter = imports.gi.Clutter;
-
+    this.shaderFactory = new ShaderFactory(Effect.getNick(), (shader) => {
       // Store uniform locations of newly created shaders.
       shader._uAdditiveBlending = shader.get_uniform_location('uAdditiveBlending');
       shader._uSeed             = shader.get_uniform_location('uSeed');
@@ -54,20 +50,13 @@ var Hexagon = class {
 
       // Write all uniform values at the start of each animation.
       shader.connect('begin-animation', (shader, settings, forOpening, testMode) => {
-        // Get the two configurable colors. They are directly injected into the shader
-        // code below.
-        const gc =
-          Clutter.Color.from_string(settings.get_string('hexagon-glow-color'))[1];
-        const lc =
-          Clutter.Color.from_string(settings.get_string('hexagon-line-color'))[1];
-
         // clang-format off
         shader.set_uniform_float(shader._uAdditiveBlending, 1, [settings.get_boolean('hexagon-additive-blending')]);
         shader.set_uniform_float(shader._uSeed,             2, [testMode ? 0 : Math.random(), testMode ? 0 : Math.random()]);
         shader.set_uniform_float(shader._uScale,            1, [settings.get_double('hexagon-scale')]);
         shader.set_uniform_float(shader._uLineWidth,        1, [settings.get_double('hexagon-line-width')]);
-        shader.set_uniform_float(shader._uGlowColor,        4, [gc.red / 255, gc.green / 255, gc.blue / 255, gc.alpha / 255]);
-        shader.set_uniform_float(shader._uLineColor,        4, [lc.red / 255, lc.green / 255, lc.blue / 255, lc.alpha / 255]);
+        shader.set_uniform_float(shader._uGlowColor,        4, utils.parseColor(settings.get_string('hexagon-glow-color')));
+        shader.set_uniform_float(shader._uLineColor,        4, utils.parseColor(settings.get_string('hexagon-line-color')));
         // clang-format on
       });
     });
@@ -76,7 +65,7 @@ var Hexagon = class {
   // ---------------------------------------------------------------------------- metadata
 
   // The effect is available on all GNOME Shell versions supported by this extension.
-  getMinShellVersion() {
+  static getMinShellVersion() {
     return [3, 36];
   }
 
@@ -84,13 +73,13 @@ var Hexagon = class {
   // required. It should match the prefix of the settings keys which store whether the
   // effect is enabled currently (e.g. '*-enable-effect'), and its animation time
   // (e.g. '*-animation-time').
-  getNick() {
+  static getNick() {
     return 'hexagon';
   }
 
   // This will be shown in the sidebar of the preferences dialog as well as in the
   // drop-down menus where the user can choose the effect.
-  getLabel() {
+  static getLabel() {
     return _('Hexagon');
   }
 
@@ -98,7 +87,7 @@ var Hexagon = class {
 
   // This is called by the preferences dialog whenever a new effect profile is loaded. It
   // binds all user interface elements to the respective settings keys of the profile.
-  bindPreferences(dialog) {
+  static bindPreferences(dialog) {
     dialog.bindAdjustment('hexagon-animation-time');
     dialog.bindAdjustment('hexagon-scale');
     dialog.bindAdjustment('hexagon-line-width');
@@ -112,7 +101,7 @@ var Hexagon = class {
   // The getActorScale() is called from extension.js to adjust the actor's size during the
   // animation. This is useful if the effect requires drawing something beyond the usual
   // bounds of the actor. This only works for GNOME 3.38+.
-  getActorScale(settings) {
+  static getActorScale(settings, forOpening, actor) {
     return {x: 1.0, y: 1.0};
   }
 }

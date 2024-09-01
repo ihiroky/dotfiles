@@ -17,20 +17,17 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-'use strict';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import Clutter from 'gi://Clutter';
+import Meta from 'gi://Meta';
+import Mtk from 'gi://Mtk';
 
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Clutter = imports.gi.Clutter;
-const Meta = imports.gi.Meta;
-const Mtk = imports.gi.Meta;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as WM from 'resource:///org/gnome/shell/ui/windowManager.js';
 
-const Main = imports.ui.main;
-const WM = imports.ui.windowManager;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { WindowGeometry } = Me.imports.ddterm.shell.geometry;
-const { is_wlclipboard, WlClipboardActivator } = Me.imports.ddterm.shell.wlclipboard;
+import { WindowGeometry } from './geometry.js';
+import { is_wlclipboard, WlClipboardActivator } from './wlclipboard.js';
 
 const MOUSE_RESIZE_GRABS = [
     Meta.GrabOp.RESIZING_NW,
@@ -43,7 +40,7 @@ const MOUSE_RESIZE_GRABS = [
     Meta.GrabOp.RESIZING_W,
 ];
 
-var WindowManager = GObject.registerClass({
+export const WindowManager = GObject.registerClass({
     Properties: {
         'settings': GObject.ParamSpec.object(
             'settings',
@@ -648,5 +645,3 @@ var WindowManager = GObject.registerClass({
         this._wl_clipboard_activator?.disable();
     }
 });
-
-/* exported WindowManager */
