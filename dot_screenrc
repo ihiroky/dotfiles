@@ -8,8 +8,10 @@ shell -$SHELL
 deflogin off
 setenv DISPLAY :0.0
 
-caption always "%?%F%{=us Wg}%:%{=us GK}%?[%n] %t%?%F%{-}%?"
-hardstatus alwayslastline "%`%-w%{=b bw}%n %t%{-}%+w %h %= @%H [%l] %{=b b}%y/%m/%d(%D) %{=b m}%c"
+#caption always "%?%F%{=us Wg}%:%{=us GK}%?[%n] %t%?%F%{-}%?"
+caption always "%?%{=us Wg}%:%{=us GK}%?[%n] %t%?%F%{-}%?"
+hardstatus alwayslastline "%`%-w%{=b bw}%n %t%{-}%+w %h %=%{g}[%{b}%H%{g}][%{y}%l%{g}][%{B}%Y-%m-%d(%D)%{W}%c%{g}]"
+#hardstatus alwayslastline '%{= G}[ %{G}%H %{g}][%= %{= w}%?%-Lw%?%{= R}%n*%f %t%?%{= R}(%u)%?%{= w}%+Lw%?%= %{= g}][ %{y}Load: %l %{g}][%{B}%Y-%m-%d(%D) %{W}%c:%s %{g}]'
 
 termcap facit|vt100|xterm LP:G0
 terminfo facit|vt100|xterm LP:G0
@@ -23,6 +25,7 @@ layout new 0:default
 #focus top
 
 bind w windowlist -b
+bind T title
 
 bind U eval "encoding utf8" "stuff 'export LANG=ja_JP.UTF-8\012'"
 bind E eval "encoding euc" "stuff 'export LANG=ja_JP.eucJP\012'"
@@ -36,7 +39,6 @@ bind k focus up
 bind l focus right
 bind t focus top
 bind b focus bottom
-
 
 bind H hardcopy -h
 hardcopydir $HOME
