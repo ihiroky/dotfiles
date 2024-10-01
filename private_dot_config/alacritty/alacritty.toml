@@ -20,7 +20,7 @@ size = 14
 
 [mouse]
 bindings = [
-  { mouse = "Right", mods = "Shift", action = "Paste" },
+  { mouse = "Right", action = "Paste" },
 ]
 hide_when_typing = true
 
