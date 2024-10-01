@@ -149,3 +149,5 @@ GIT_PS1_SHOWSTASHSTATE=1
 if [ $TILIX_ID ] || [ $VTE_VERSION ]; then
         source /etc/profile.d/vte-2.91.sh
 fi
+
+which /usr/bin/mise >/dev/null && eval "$(/usr/bin/mise activate bash)"
