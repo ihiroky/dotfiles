@@ -8,10 +8,8 @@ shell -$SHELL
 deflogin off
 setenv DISPLAY :0.0
 
-#caption always "%?%F%{=us Wg}%:%{=us GK}%?[%n] %t%?%F%{-}%?"
-caption always "%?%{=us Wg}%:%{=us GK}%?[%n] %t%?%F%{-}%?"
-hardstatus alwayslastline "%`%-w%{=b bw}%n %t%{-}%+w %h %=%{g}[%{b}%H%{g}][%{y}%l%{g}][%{B}%Y-%m-%d(%D)%{W}%c%{g}]"
-#hardstatus alwayslastline '%{= G}[ %{G}%H %{g}][%= %{= w}%?%-Lw%?%{= R}%n*%f %t%?%{= R}(%u)%?%{= w}%+Lw%?%= %{= g}][ %{y}Load: %l %{g}][%{B}%Y-%m-%d(%D) %{W}%c:%s %{g}]'
+caption always "%?%F%{=us Wg}%:%{=us GK}%?[%n] %t%?%F%{-}%?"
+hardstatus alwayslastline "%`%-w%{=b bw}%n %t%{-}%+w %h %= @%H [%l] %{=b b}%y/%m/%d(%D) %{=b m}%c"
 
 termcap facit|vt100|xterm LP:G0
 terminfo facit|vt100|xterm LP:G0
@@ -25,13 +23,15 @@ layout new 0:default
 #focus top
 
 bind w windowlist -b
-bind T title
 
 bind U eval "encoding utf8" "stuff 'export LANG=ja_JP.UTF-8\012'"
-bind E eval "encoding euc" "stuff 'export LANG=ja_JP.eucJP\012'"
+bind E eval "encoding euc"  "stuff 'export LANG=ja_JP.eucJP\012'"
 bind W eval "encoding sjis" "stuff 'export LANG=ja_JP.SJIS\012'"
 
-bindkey -m ' ' eval 'stuff \040' 'writebuf' 'exec sh -c "/bin/cat /tmp/screen-exchange | /usr/bin/xsel -b"'
+# Split window and create screen at the same time
+bind p eval 'echo New window with screen' 'command -c pane'
+bind -c pane | eval "split -v" "focus right" screen
+bind -c pane S eval "split"    "focus down"  screen
 
 bind s colon 'screen ssh '
 
@@ -41,6 +41,7 @@ bind k focus up
 bind l focus right
 bind t focus top
 bind b focus bottom
+
 
 bind H hardcopy -h
 hardcopydir $HOME
