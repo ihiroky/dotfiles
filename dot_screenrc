@@ -8,8 +8,9 @@ shell -$SHELL
 deflogin off
 setenv DISPLAY :0.0
 
-caption always "%?%F%{=us Wg}%:%{=us GK}%?[%n] %t%?%F%{-}%?"
-hardstatus alwayslastline "%`%-w%{=b bw}%n %t%{-}%+w %h %= @%H [%l] %{=b b}%y/%m/%d(%D) %{=b m}%c"
+#caption always "%?%F%{=us Wg}%:%{=us GK}%?[%n] %t%?%F%{-}%?"
+caption always "%?%{=us Wg}%:%{=us GK}%?[%n] %t%?%F%{-}%?"
+hardstatus alwayslastline "%`%-w%{=b bw}%n %t%{-}%+w %h %=%{g}[%{b}%H%{g}][%{y}%l%{g}][%{B}%Y-%m-%d(%D)%{W}%c%{g}]"
 
 termcap facit|vt100|xterm LP:G0
 terminfo facit|vt100|xterm LP:G0
