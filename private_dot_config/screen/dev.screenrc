@@ -1,0 +1,22 @@
+chdir $HOME/projects/live-comment/packages/app/
+
+split -v
+focus right
+screen -t serve-saml mise x -- npm run serve-saml
+
+split
+focus down
+screen -t watch mise x -- npm run watch
+
+focus up
+resize +21
+focus down
+resize +7
+
+focus top
+screen -t live-comment/app
+
+split
+focus down
+chdir $HOME/projects/live-comment/
+screen -t live-comment
