@@ -34,7 +34,7 @@ bind p eval 'echo New window with screen' 'command -c pane'
 bind -c pane | eval "split -v" "focus right" screen
 bind -c pane S eval "split"    "focus down"  screen
 
-bind s colon 'screen ssh '
+bind s colon 'screen '
 
 bind h focus left
 bind j focus down
