@@ -149,6 +149,6 @@ GIT_PS1_SHOWSTASHSTATE=1
 if [ $TILIX_ID ] || [ $VTE_VERSION ]; then
   source /etc/profile.d/vte-2.91.sh
 fi
-set | grep ALA >/dev/null && [[ SHLVL -eq 1 ]] && screen
+set | egrep '(ALA|Alacritty)' >/dev/null && [[ SHLVL -eq 1 ]] && screen
 
 which /usr/bin/mise >/dev/null && eval "$(/usr/bin/mise activate bash)"
