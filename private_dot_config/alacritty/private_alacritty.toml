@@ -10,8 +10,8 @@
 style = { shape = "Block", blinking = "Always" }
 blink_timeout = 0
 smooth_motion = true
-smooth_motion_factor = 0.7
-smooth_motion_spring = 0.7
+smooth_motion_factor = 0.5
+smooth_motion_spring = 0.5
 smooth_motion_max_stretch_x = 3.0
 smooth_motion_max_stretch_y = 3.0
 # block_replace_shape = "underline"
