@@ -48,7 +48,7 @@ local config = wezterm.config_builder and wezterm.config_builder() or {}
 if wezterm.target_triple == 'x86_64-pc-windows-msvc' then
   config.default_domain = 'WSL:Ubuntu-24.04'
 end
-config.enable_wayland = false -- only on linux
+config.enable_wayland = true
 config.use_ime = true
 config.font_size = 14
 config.font = wezterm.font({ family = 'Migu 1M' })
@@ -65,7 +65,7 @@ config.visual_bell = {
   fade_out_duration_ms = 10,
 }
 config.window_background_opacity = 0.9
-config.window_decorations = 'RESIZE'
+config.window_decorations = 'NONE'
 config.window_frame = {
   font = wezterm.font({ family = 'Migu 1M', weight = 'Regular' }),
   font_size = 10,
