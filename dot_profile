@@ -38,3 +38,4 @@ fi
 
 # for signing commit with gpg/pinentry
 export GPG_TTY=$(tty)
+. "$HOME/.cargo/env"
