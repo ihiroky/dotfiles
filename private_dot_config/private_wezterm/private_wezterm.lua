@@ -113,7 +113,7 @@ config.key_tables = {
   }
 }
 
-config.leader = { key = ' ', mods = 'CTRL', timeout_milliseconds = 1000 }
+config.leader = { key = 'q', mods = 'CTRL', timeout_milliseconds = 1000 }
 config.keys = {
   -- mux control
   {
