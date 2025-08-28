@@ -3,6 +3,9 @@
     "allow": [],
     "deny": [
       "Bash(sudo:*)",
+      "Bash(env:*)",
+      "Bash(printenv:*)",
+      "Bash(set:*)",
       "Bash(rm:*)",
       "Bash(rm -rf:*)",
       "Bash(git push:*)",
