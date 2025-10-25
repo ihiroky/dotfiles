@@ -1,10 +1,6 @@
 local wezterm = require 'wezterm'
 local action = wezterm.action
-local session_manager = require('wezterm-session-manager/session-manager')
 
-wezterm.on('save_session', function(window) session_manager.save_state(window) end)
-wezterm.on('load_session', function(window) session_manager.load_state(window) end)
-wezterm.on('restore_session', function(window) session_manager.restore_state(window) end)
 wezterm.on('gui-startup', function(cmd)
   local tab, pane, window = wezterm.mux.spawn_window(cmd or {})
   -- Not affected on Wayland
@@ -64,7 +60,8 @@ config.visual_bell = {
   fade_in_duration_ms = 10,
   fade_out_duration_ms = 10,
 }
-config.window_background_opacity = 0.9
+config.tab_bar_at_bottom = false
+config.window_background_opacity = 0.66
 config.window_decorations = 'NONE'
 config.window_frame = {
   font = wezterm.font({ family = 'Migu 1M', weight = 'Regular' }),
@@ -107,13 +104,14 @@ config.key_tables = {
           if line then
             wezterm.mux.rename_workspace(wezterm.mux.get_active_workspace(), line)
           end
-        end),
+       end),
       },
     },
   }
 }
 
-config.leader = { key = 'q', mods = 'CTRL', timeout_milliseconds = 1000 }
+config.leader = { key = 'F12', mods = 'CTRL', timeout_milliseconds = 1000 }
+
 config.keys = {
   -- mux control
   {
@@ -152,10 +150,6 @@ config.keys = {
   -- misc
   { key = 'F11', action = action.ToggleFullScreen },
   { key = 'a', mods = 'SHIFT|CTRL', action = action.ActivateCopyMode },
-  -- session
-  { key = 'S', mods = 'LEADER', action = action{EmitEvent = 'save_session'} },
-  { key = 'L', mods = 'LEADER', action = action{EmitEvent = 'load_session'} },
-  { key = 'R', mods = 'LEADER', action = action{EmitEvent = 'restore_session'} },
 }
 
 config.mouse_bindings = {
