@@ -35,7 +35,3 @@ if [ -d "$HOME/.deno/bin" ] ; then
   export DENO_INSTALL="$HOME/.deno"
   PATH="$DENO_INSTALL/bin:$PATH"
 fi
-
-# for signing commit with gpg/pinentry
-export GPG_TTY=$(tty)
-. "$HOME/.cargo/env"
