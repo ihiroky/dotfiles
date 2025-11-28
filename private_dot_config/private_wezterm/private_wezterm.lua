@@ -3,7 +3,8 @@ local action = wezterm.action
 
 wezterm.on('gui-startup', function(cmd)
   local tab, pane, window = wezterm.mux.spawn_window(cmd or {})
-  window:gui_window():maximize()
+  -- Not affected on Wayland
+  window:gui_window():set_position(100, 50)
 end)
 wezterm.on('update-status', function(window, _)
   -- Grab the utf8 character for the "powerline" left facing solid arrow.
@@ -110,7 +111,7 @@ config.key_tables = {
   }
 }
 
-config.leader = { key = 'F12', mods = 'CTRL', timeout_milliseconds = 1000 }
+config.leader = { key = 'F12', timeout_milliseconds = 1000 }
 
 config.keys = {
   -- mux control
