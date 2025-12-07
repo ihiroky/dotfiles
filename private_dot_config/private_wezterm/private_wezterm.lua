@@ -52,8 +52,6 @@ config.font = wezterm.font({ family = 'Migu 1M' })
 config.cell_width = 1.05
 config.window_close_confirmation = 'AlwaysPrompt'
 config.enable_scroll_bar = true
-config.initial_rows = 48
-config.initial_cols = 180
 config.default_cursor_style = 'BlinkingBlock'
 config.color_scheme = 'Tokyo Night'
 config.audible_bell = 'Disabled'
