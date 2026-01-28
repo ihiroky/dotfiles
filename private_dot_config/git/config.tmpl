@@ -4,6 +4,7 @@
 	signingkey = {{ .signingkey }}
 [core]
 	editor = /usr/bin/vim
+	pager = delta
 [remote "origin"]
 	prune = true
 [pull]
@@ -12,9 +13,18 @@
 	defaultBranch = main
 [commit]
 	gpgsign = true
+[merge]
+	conflictStyle = zdiff3
 [credential "https://github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true  # use n and N to move between diff sections
+	dark = true      # or light = true, or omit for auto-detection
+  side-by-side = true
+  line-numbers = true

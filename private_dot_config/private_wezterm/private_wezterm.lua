@@ -38,7 +38,18 @@ wezterm.on('update-status', function(window, _)
   end
   window:set_right_status(wezterm.format(elements))
 end)
+wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_width)
+  local pane = tab.active_pane
+  local process_name = pane.foreground_process_name:gsub("^.*[/\\]", "")
 
+  if process_name:match("sh$") then
+    return nil
+  end
+
+  return {
+    { Text = " " .. (tab.tab_index + 1) .. ": ⚙️" .. process_name .. " " },
+  }
+end)
 
 local config = wezterm.config_builder and wezterm.config_builder() or {}
 if wezterm.target_triple == 'x86_64-pc-windows-msvc' then
@@ -54,6 +65,11 @@ config.window_close_confirmation = 'AlwaysPrompt'
 config.enable_scroll_bar = true
 config.default_cursor_style = 'BlinkingBlock'
 config.color_scheme = 'Tokyo Night'
+-- config.colors = {
+--   tab_bar = {
+--     background = "none",
+--   },
+-- }
 config.audible_bell = 'Disabled'
 config.visual_bell = {
   fade_in_duration_ms = 10,
@@ -65,7 +81,15 @@ config.window_decorations = 'NONE'
 config.window_frame = {
   font = wezterm.font({ family = 'Migu 1M', weight = 'Regular' }),
   font_size = 10,
+-- make tab bar transparent
+  inactive_titlebar_bg = "none",
+  active_titlebar_bg = "none",
 }
+ config.window_background_gradient = {
+-- Background color of Tokyo Night
+   colors = { "#24283b" },
+ }
+
 
 config.key_tables = {
   resize_panes = {
