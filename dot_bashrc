@@ -165,3 +165,11 @@ export GPG_TTY=$(tty)
 
 which /usr/bin/mise >/dev/null && eval "$(/usr/bin/mise activate bash)"
 . "$HOME/.cargo/env"
+
+# pnpm
+export PNPM_HOME="$HOME/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
