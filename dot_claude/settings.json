@@ -1,12 +1,21 @@
 {
   "permissions": {
-    "allow": [],
+    "allow": [
+      "WebFetch(domain:v2.tauri.app)",
+      "Bash(ls:*)",
+      "Bash(gws:*)",
+      "Bash(npm install:*)",
+      "Bash(cargo check:*)",
+      "Bash(pkg-config --version)",
+      "Bash(dpkg -l libssl-dev)",
+      "Bash(dpkg -l libgtk-3-dev)"
+    ],
     "deny": [
       "Bash(sudo:*)",
       "Bash(env:*)",
       "Bash(printenv:*)",
       "Bash(set:*)",
-      "Bash(rm:*)",
+      "Bash(rbw list:*)",
       "Bash(rm -rf:*)",
       "Bash(git push:*)",
       "Bash(git commit:*)",
@@ -28,5 +37,11 @@
       "Bash(mysql:*)",
       "Bash(mongod:*)"
     ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "filesystem": {
+      "allowWrite": ["~/.kube", "/tmp/build"]
+    }
   }
 }
