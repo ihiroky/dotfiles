@@ -38,10 +38,26 @@
       "Bash(mongod:*)"
     ]
   },
+  "enabledPlugins": {
+    "codex@openai-codex": true
+  },
+  "extraKnownMarketplaces": {
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    }
+  },
   "sandbox": {
     "enabled": true,
     "filesystem": {
-      "allowWrite": ["~/.kube", "/tmp/build"]
+      "allowWrite": [
+        "~/.cache",
+        "/home/hiroki/.local/share/rbw",
+        "/run/user/1000",
+        "/tmp/build"
+      ]
     }
   }
 }
