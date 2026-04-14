@@ -36,7 +36,8 @@
       "Bash(psql:*)",
       "Bash(mysql:*)",
       "Bash(mongod:*)"
-    ]
+    ],
+    "defaultMode": "auto"
   },
   "enabledPlugins": {
     "codex@openai-codex": true
@@ -51,13 +52,37 @@
   },
   "sandbox": {
     "enabled": true,
+    "network": {
+      "allowUnixSockets": [
+        "/run/user/1000/rbw/socket",
+        "/run/user/1000/rbw/ssh-agent-socket"
+      ]
+    },
     "filesystem": {
       "allowWrite": [
         "~/.cache",
         "/home/hiroki/.local/share/rbw",
         "/run/user/1000",
-        "/tmp/build"
+        "/tmp"
       ]
     }
-  }
+  },
+  "env": {
+    "TRACE_TO_LANGFUSE": "true",
+    "CC_LANGFUSE_DEBUG": "true"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/hiroki/.claude/venvs/langfuse-hook/bin/python /home/hiroki/.claude/scripts/langfuse_hook.py"
+          }
+        ]
+      }
+    ]
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true
 }
