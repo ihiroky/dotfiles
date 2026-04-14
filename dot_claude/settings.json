@@ -53,10 +53,7 @@
   "sandbox": {
     "enabled": true,
     "network": {
-      "allowUnixSockets": [
-        "/run/user/1000/rbw/socket",
-        "/run/user/1000/rbw/ssh-agent-socket"
-      ]
+      "allowAllUnixSockets": true
     },
     "filesystem": {
       "allowWrite": [
