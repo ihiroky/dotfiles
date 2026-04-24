@@ -1,0 +1,11 @@
+#:schema https://docs.jj-vcs.dev/latest/config-schema.json
+
+[user]
+name = "Hiroki Itoh"
+email = "ihiroky@gmail.com"
+[ui]
+editor = [ "/usr/bin/vim" ]
+[signing]
+behavior = "own"
+backend = "gpg"
+key = "951E17929A5CE8C5"
