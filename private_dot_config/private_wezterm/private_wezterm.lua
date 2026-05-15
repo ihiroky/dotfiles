@@ -66,11 +66,11 @@ config.window_close_confirmation = 'AlwaysPrompt'
 config.enable_scroll_bar = true
 config.default_cursor_style = 'BlinkingBlock'
 config.color_scheme = 'Tokyo Night'
--- config.colors = {
---   tab_bar = {
---     background = "none",
---   },
--- }
+config.inactive_pane_hsb = {
+  hue = 0.9,
+  saturation = 0.9,
+  brightness = 0.5,
+}
 config.audible_bell = 'Disabled'
 config.visual_bell = {
   fade_in_duration_ms = 10,
