@@ -56,6 +56,7 @@ if wezterm.target_triple == 'x86_64-pc-windows-msvc' then
 --  config.default_domain = 'WSL:Ubuntu-24.04'
   config.default_prog = { 'wsl.exe', '--cd', '/home/hiroki' }
 end
+config.enable_kitty_keyboard = true
 config.enable_wayland = true
 config.use_ime = true
 config.font_size = 14
