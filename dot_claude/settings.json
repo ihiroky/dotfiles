@@ -1,35 +1,32 @@
 {
+  "env": {
+    "TRACE_TO_LANGFUSE": "true",
+    "CC_LANGFUSE_CONFIG_FILE": "/home/hiroki/.claude/langfuse_hook_config.json",
+    "CC_LANGFUSE_DEBUG": "true"
+  },
   "permissions": {
     "allow": [
-      "WebFetch(domain:v2.tauri.app)",
       "Bash(ls:*)",
+      "Bash(grep:*)",
       "Bash(gws:*)",
-      "Bash(npm install:*)",
+      "Bash(rbw get:*)",
       "Bash(cargo check:*)",
       "Bash(pkg-config --version)",
-      "Bash(dpkg -l libssl-dev)",
-      "Bash(dpkg -l libgtk-3-dev)"
+      "Bash(dpkg -l *)"
     ],
     "deny": [
       "Bash(sudo:*)",
       "Bash(env:*)",
       "Bash(printenv:*)",
       "Bash(set:*)",
-      "Bash(rbw list:*)",
       "Bash(rm -rf:*)",
       "Bash(git push:*)",
-      "Bash(git commit:*)",
-      "Bash(git reset:*)",
-      "Bash(git rebase:*)",
       "Read(.env.*)",
       "Read(id_rsa)",
       "Read(id_ed25519)",
-      "Read(**/*token*)",
-      "Read(**/*key*)",
+      "Read(*.pem)",
       "Write(.env*)",
       "Write(**/secrets/**)",
-      "Bash(curl:*)",
-      "Bash(wget:*)",
       "Bash(nc:*)",
       "Bash(npm uninstall:*)",
       "Bash(npm remove:*)",
@@ -39,17 +36,22 @@
     ],
     "defaultMode": "auto"
   },
-  "enabledPlugins": {
-    "codex@openai-codex": true
-  },
-  "extraKnownMarketplaces": {
-    "openai-codex": {
-      "source": {
-        "source": "github",
-        "repo": "openai/codex-plugin-cc"
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+        ]
       }
-    }
+    ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh",
+    "padding": 0
+  },
+  "enabledPlugins": {},
+  "extraKnownMarketplaces": {},
+  "language": "Japanese",
   "sandbox": {
     "enabled": true,
     "network": {
@@ -63,22 +65,6 @@
         "/tmp"
       ]
     }
-  },
-  "env": {
-    "TRACE_TO_LANGFUSE": "true",
-    "CC_LANGFUSE_DEBUG": "true"
-  },
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/home/hiroki/.claude/venvs/langfuse-hook/bin/python /home/hiroki/.claude/scripts/langfuse_hook.py"
-          }
-        ]
-      }
-    ]
   },
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true
