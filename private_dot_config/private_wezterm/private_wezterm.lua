@@ -9,8 +9,8 @@ wezterm.on('gui-startup', function(cmd)
   local target_height = math.floor(screen.height * 0.9)
   window:gui_window():set_inner_size(target_width, target_height)
 
-  local right_pane = pane:split { direction = 'Right', size = 0.25 }
-  local left_bottom_pane = pane:split { direction = 'Bottom', size = 0.25 }
+  local right_pane = pane:split { direction = 'Right', size = 0.2 }
+  local left_bottom_pane = pane:split { direction = 'Bottom', size = 0.2 }
   pane:activate()
 end)
 wezterm.on('update-status', function(window, _)
