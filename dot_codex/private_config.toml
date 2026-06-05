@@ -1,0 +1,41 @@
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
+personality = "pragmatic"
+approval_policy = "untrusted"
+service_tier = "default"
+[projects."/home/hiroki/.codex"]
+trust_level = "trusted"
+
+[projects."/home/hiroki/projects/ui-robo"]
+trust_level = "trusted"
+
+[projects."/home/hiroki/projects/devcontainer-base"]
+trust_level = "trusted"
+
+[projects."/home/hiroki/projects/keyball"]
+trust_level = "trusted"
+
+[projects."/home/hiroki/projects/keymap-editor"]
+trust_level = "trusted"
+
+[projects."/home/hiroki/.config/memo"]
+trust_level = "trusted"
+
+[plugins."google-calendar@openai-curated"]
+enabled = true
+
+[plugins."gmail@openai-curated"]
+enabled = true
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."google-drive@openai-curated"]
+enabled = true
+
+[tui]
+status_line = ["model-with-reasoning", "project-name", "git-branch", "context-used", "five-hour-limit", "weekly-limit", "fast-mode"]
+status_line_use_colors = true
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
