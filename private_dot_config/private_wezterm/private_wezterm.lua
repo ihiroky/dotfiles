@@ -3,8 +3,15 @@ local action = wezterm.action
 
 wezterm.on('gui-startup', function(cmd)
   local tab, pane, window = wezterm.mux.spawn_window(cmd or {})
-  -- Not affected on Wayland
-  window:gui_window():set_position(100, 50)
+
+  local screen = wezterm.gui.screens().active
+  local target_width = math.floor(screen.width * 0.99)
+  local target_height = math.floor(screen.height * 0.9)
+  window:gui_window():set_inner_size(target_width, target_height)
+
+  local right_pane = pane:split { direction = 'Right', size = 0.25 }
+  local left_bottom_pane = pane:split { direction = 'Bottom', size = 0.25 }
+  pane:activate()
 end)
 wezterm.on('update-status', function(window, _)
   -- Grab the utf8 character for the "powerline" left facing solid arrow.
