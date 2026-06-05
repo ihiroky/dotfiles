@@ -3,12 +3,6 @@ local action = wezterm.action
 
 wezterm.on('gui-startup', function(cmd)
   local tab, pane, window = wezterm.mux.spawn_window(cmd or {})
-
-  local screen = wezterm.gui.screens().active
-  local target_width = math.floor(screen.width * 0.99)
-  local target_height = math.floor(screen.height * 0.9)
-  window:gui_window():set_inner_size(target_width, target_height)
-
   local right_pane = pane:split { direction = 'Right', size = 0.2 }
   local left_bottom_pane = pane:split { direction = 'Bottom', size = 0.2 }
   pane:activate()
