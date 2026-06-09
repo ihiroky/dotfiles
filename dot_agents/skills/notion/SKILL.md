@@ -1,7 +1,7 @@
 ---
 name: notion
 description: >
-  Operate Notion workspaces via ncli (MCP + REST API).
+  Access and operate Notion workspaces via ncli (MCP + REST API).
   Covers page search/create/update, database create/query, view management, comments, file upload, and direct REST API access.
   Use when user asks to "Notion に書いて", "ページ作って", "タスク管理", "DB 作成",
   "Notion で検索", "議事録", "ファイルアップロード", "create a Notion page", "track tasks in Notion",
