@@ -3,6 +3,7 @@ model_reasoning_effort = "medium"
 personality = "pragmatic"
 approval_policy = "untrusted"
 service_tier = "default"
+default_permissions = ":workspace"
 [projects."/home/hiroki/.codex"]
 trust_level = "trusted"
 
