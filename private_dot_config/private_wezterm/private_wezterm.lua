@@ -2,10 +2,10 @@ local wezterm = require 'wezterm'
 local action = wezterm.action
 
 wezterm.on('gui-startup', function(cmd)
-  local tab, pane, window = wezterm.mux.spawn_window(cmd or {})
-  local right_pane = pane:split { direction = 'Right', size = 0.2 }
-  local left_bottom_pane = pane:split { direction = 'Bottom', size = 0.2 }
-  pane:activate()
+--  local tab, pane, window = wezterm.mux.spawn_window(cmd or {})
+--  local right_pane = pane:split { direction = 'Right', size = 0.2 }
+--  local left_bottom_pane = pane:split { direction = 'Bottom', size = 0.2 }
+--  pane:activate()
 end)
 wezterm.on('update-status', function(window, _)
   -- Grab the utf8 character for the "powerline" left facing solid arrow.
