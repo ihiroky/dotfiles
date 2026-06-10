@@ -4,6 +4,10 @@
     "CC_LANGFUSE_CONFIG_FILE": "/home/hiroki/.claude/langfuse_hook_config.json",
     "CC_LANGFUSE_DEBUG": "true"
   },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "permissions": {
     "allow": [
       "Bash(ls:*)",
@@ -36,11 +40,11 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "opus[1m]",
   "hooks": {
     "Stop": [
       {
-        "hooks": [
-        ]
+        "hooks": []
       }
     ]
   },
@@ -66,11 +70,8 @@
       ]
     }
   },
-  "attribution": {
-    "commit": "",
-    "pr": ""
-  },
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
-  "externalEditor": "zed"
+  "externalEditor": "zed",
+  "effortLevel": "medium"
 }
