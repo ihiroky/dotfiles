@@ -7,6 +7,23 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+    "project_panel": {
+        "dock": "right"
+    },
+    "outline_panel": {
+        "dock": "right"
+    },
+    "collaboration_panel": {
+        "dock": "right"
+    },
+    "agent": {
+        "dock": "left",
+        "favorite_models": [],
+        "model_parameters": []
+    },
+    "git_panel": {
+        "dock": "right"
+    },
     "agent_servers": {},
     "ui_font_family": "Migu 1P",
     "buffer_font_family": "Migu 1M",
@@ -36,9 +53,20 @@
     },
     "ui_font_size": 16,
     "buffer_font_size": 15,
+    "buffer_line_height": "comfortable",
     "theme": {
         "mode": "system",
         "light": "One Light",
         "dark": "Catppuccin Mocha"
-    }
+    },
+    "tab": {
+        "file_icons": true,
+        "git_status": true
+    },
+    "vim_mode": true,
+    "vim": {
+        "use_system_clipboard": "always"
+        // "use_smartcase_find": ""
+    },
+    "relative_line_numbers": true
 }

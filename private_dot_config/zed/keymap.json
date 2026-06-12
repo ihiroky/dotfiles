@@ -1,0 +1,54 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      //"shift shift": "file_finder::Toggle"
+      "alt alt": "file_finder::Toggle",
+    },
+  },
+  {
+    "context": "Editor && vim_mode == insert",
+    "bindings": {
+      // "j k": "vim::NormalBefore"
+    },
+  },
+  {
+    "context": "Editor && (vim_mode == normal || vim_mode == visual) && !VimWaiting && !menu",
+    "bindings": {
+      "ctrl-x h": "workspace::ActivatePaneLeft", // 左の分割ペインに移動
+      "ctrl-x j": "workspace::ActivatePaneDown", // 下の分割ペインに移動
+      "ctrl-x k": "workspace::ActivatePaneUp", // 上の分割ペインに移動
+      "ctrl-x l": "workspace::ActivatePaneRight", // 右の分割ペインに移動
+      "ctrl-x s": "pane::SplitDown", // 下に分割
+      "ctrl-x \\": "pane::SplitRight", // 右に分割
+      "ctrl-x q": "pane::CloseActiveItem", // アクティブなタブを閉じる
+      "ctrl-x w": "workspace::Save", // ファイルを保存する
+      "ctrl-x p": "pane::ActivatePreviousItem", // 前のタブに移動
+      "ctrl-x n": "pane::ActivateNextItem", // 次のタブに移動
+    },
+  },
+  {
+    "context": "Workspace",
+    "unbind": {
+      "ctrl-w": "workspace::CloseActiveDock",
+    },
+  },
+  {
+    "context": "Pane",
+    "unbind": {
+      "ctrl-w": [
+        "pane::CloseActiveItem",
+        {
+          "close_pinned": false,
+        },
+      ],
+    },
+  },
+]
