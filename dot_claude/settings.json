@@ -8,6 +8,9 @@
     "commit": "",
     "pr": ""
   },
+  "worktree": {
+    "baseRef": "head"
+  },
   "permissions": {
     "allow": [
       "Bash(ls:*)",
@@ -40,6 +43,7 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "sonnet[1m]",
   "hooks": {
     "Stop": [
       {
@@ -69,8 +73,8 @@
       ]
     }
   },
+  "effortLevel": "medium",
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
-  "externalEditor": "zed",
-  "effortLevel": "medium"
+  "externalEditor": "zed"
 }
