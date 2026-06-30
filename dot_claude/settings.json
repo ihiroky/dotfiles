@@ -43,7 +43,6 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "sonnet[1m]",
   "hooks": {
     "Stop": [
       {
