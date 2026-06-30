@@ -68,7 +68,7 @@ format_rl() {
   pct="$1"
   reset_ts="$2"
   label="$3"
-  [ -z "$pct" ] && return
+  [ -z "$pct" ] && printf "${label}-" && return
   if [ "$pct" -ge 90 ]; then color="$RED"
   elif [ "$pct" -ge 70 ]; then color="$YELLOW"
   else color="$GREEN"
