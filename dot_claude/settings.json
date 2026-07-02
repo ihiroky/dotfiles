@@ -27,7 +27,6 @@
       "Bash(printenv:*)",
       "Bash(set:*)",
       "Bash(rm -rf:*)",
-      "Bash(git push:*)",
       "Read(.env.*)",
       "Read(id_rsa)",
       "Read(id_ed25519)",
