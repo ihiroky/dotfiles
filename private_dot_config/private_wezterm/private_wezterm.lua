@@ -78,7 +78,7 @@ config.visual_bell = {
   fade_out_duration_ms = 10,
 }
 config.tab_bar_at_bottom = false
-config.window_background_opacity = 0.7
+config.window_background_opacity = 0.8
 config.window_decorations = 'NONE'
 config.window_frame = {
   font = wezterm.font({ family = 'Migu 1M', weight = 'Regular' }),
