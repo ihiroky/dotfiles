@@ -118,6 +118,8 @@ fi
 
 alias vi=vim
 alias view='vim -R'
+alias ccsbg='claude --bg --model sonnet'
+alias ccobg='claude --bg --model opus'
 
 cn() {
   case $1 in
