@@ -3,8 +3,9 @@ local action = wezterm.action
 
 wezterm.on('gui-startup', function(cmd)
  local tab, pane, window = wezterm.mux.spawn_window(cmd or {})
- local right_pane = pane:split { direction = 'Right', size = 0.2 }
- local left_bottom_pane = pane:split { direction = 'Bottom', size = 0.2 }
+ window:gui_window():maximize()
+ local right_pane = pane:split { direction = 'Right', size = 0.9 }
+ local right_bottom_pane = right_pane:split { direction = 'Bottom', size = 0.1 }
  pane:activate()
 end)
 wezterm.on('update-status', function(window, _)
