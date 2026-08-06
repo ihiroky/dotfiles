@@ -93,10 +93,12 @@ def search(args) -> int:
 
         mtime = datetime.datetime.fromtimestamp(os.path.getmtime(path))
         proj = decode_project_dir(os.path.basename(os.path.dirname(path)))
+        session_id = os.path.basename(path)[:-6]
         print(f"\n=== {os.path.basename(path)}  ({len(hits)} 件) ===")
+        print(f"    id     : {session_id}")
         print(f"    project: {proj}")
         print(f"    updated: {mtime:%Y-%m-%d %H:%M}")
-        print(f"    resume : claude --resume {os.path.basename(path)[:-6]}")
+        print(f"    resume : claude --resume {session_id}")
         for role, text in hits[: args.context]:
             if args.full:
                 snippet = text

@@ -49,6 +49,7 @@ python3 /home/hiroki/.claude/skills/search-session-cc/search_sessions.py "<キ�
 
 ```
 === 3c256f75-8cf6-4878-9a1c-9df5150d92ad.jsonl  (3 件) ===
+    id     : 3c256f75-8cf6-4878-9a1c-9df5150d92ad
     project: /home/hiroki/.config/memo
     updated: 2026-07-05 14:22
     resume : claude --resume 3c256f75-8cf6-4878-9a1c-9df5150d92ad
@@ -62,6 +63,7 @@ python3 /home/hiroki/.claude/skills/search-session-cc/search_sessions.py "<キ�
 各セッションブロックには以下が含まれる:
 
 - **ファイル名（セッションID）** とヒット件数
+- **id**: 完全なセッションID（装飾なし・コピー用）
 - **project**: 元の作業ディレクトリ（近似復元。パスに `-` を含む場合はずれる可能性あり）
 - **updated**: 最終更新日時
 - **resume**: そのまま実行すればセッションを再開できるコマンド
@@ -69,7 +71,7 @@ python3 /home/hiroki/.claude/skills/search-session-cc/search_sessions.py "<キ�
 
 ### Step 3: 結果をユーザーに提示する
 
-ヒットしたセッションを要約して伝える。ユーザーが特定のセッションを深掘りしたい場合は:
+ヒットしたセッションを要約して伝える。セッションIDを文章中で言及する際は必ず `id` 行の完全な形をそのまま使う（短縮しない）。ユーザーが特定のセッションを深掘りしたい場合は:
 
 - 該当 `.jsonl` を直接読む、または
 - `resume` 行のコマンドで再開する
