@@ -1,0 +1,19 @@
+{
+  "name": "google-slides-deck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "deck JSON から Techtouch デザイン準拠の Google スライドを生成する",
+  "main": "lib/render.js",
+  "bin": {
+    "google-slides-deck": "bin/generate.js"
+  },
+  "scripts": {
+    "example": "node bin/generate.js examples/sample-deck.json --no-upload"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

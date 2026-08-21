@@ -1,0 +1,121 @@
+{
+  "title": "実装済みレイアウトの見本",
+  "subtitle": "google-slides-deck v1",
+  "author": "",
+  "footer": { "confidential": true },
+  "drive": {
+    "fileId": null,
+    "folderId": null,
+    "name": "google-slides-deck サンプル"
+  },
+  "slides": [
+    {
+      "layout": "cover",
+      "title": "実装済みレイアウトの見本",
+      "subtitle": "deck JSON から Google スライドを生成する",
+      "meta": ["2026-08-21", "サンプル"]
+    },
+    {
+      "layout": "toc-1col",
+      "title": "目次",
+      "items": [
+        "レイアウトの選び方",
+        "本文レイアウト 8 種",
+        "検査と発行"
+      ]
+    },
+    {
+      "layout": "section",
+      "number": "01",
+      "title": "レイアウトの選び方"
+    },
+    {
+      "layout": "statement",
+      "title": "設計方針",
+      "claim": "内容の伝達関係からレイアウトを選ぶ",
+      "supports": [
+        "同列項目なら bullets、比較なら table、段階なら chevrons を選ぶ",
+        "レイアウトが決まってから文字量を調整する。逆順にしない"
+      ]
+    },
+    {
+      "layout": "bullets",
+      "title": "箇条書きの階層",
+      "lead": "グリフは ● ○ ■ を 3 階層で循環する。",
+      "items": [
+        { "text": "第 1 階層は黒丸で並べる", "level": 1 },
+        { "text": "第 2 階層は白丸にする", "level": 2 },
+        { "text": "第 3 階層は四角にする", "level": 3 },
+        { "text": "第 4 階層は黒丸に戻る", "level": 4 },
+        { "text": "この深さで読めない構造は図解へ変換する", "level": 1, "role": "strong" }
+      ],
+      "note": "第 1 階層は 7 項目までを目安にする"
+    },
+    {
+      "layout": "table",
+      "title": "レイアウトと許容量",
+      "lead": "行見出しは塗らずに青の太字、罫線は薄いグレーにする。",
+      "rowHeader": true,
+      "columns": ["レイアウト", "件数", "1 要素の文字数"],
+      "rows": [
+        ["bullets", "1–7", "60"],
+        ["titled-boxes", "2–4", "100"],
+        ["chevrons-h", "3–5", "108（3 段）"],
+        ["chevrons-v", "3–7", "60（1 列）"]
+      ],
+      "source": "references/layout-catalog.md"
+    },
+    {
+      "layout": "chevrons-h",
+      "title": "生成の流れ",
+      "lead": "矢羽は連結せず独立して並べる。",
+      "steps": [
+        { "label": "検査", "lead": "deck JSON を数える", "detail": "件数と文字数を密度バジェットと照らす。error があれば描画へ進まない" },
+        { "label": "描画", "lead": "PPTX を組み立てる", "detail": "theme.js のトークンだけを使い、px 座標を inch へ変換して配置する" },
+        { "label": "発行", "lead": "Drive へ渡す", "detail": "アップロード時に変換させ、2 回目以降は同じ fileId を上書きして URL を保つ" }
+      ]
+    },
+    {
+      "layout": "chevrons-v",
+      "title": "段階ごとの担当",
+      "lead": "説明欄を 2 列にすると比較になる。",
+      "detailHeadings": ["やること", "止まる条件"],
+      "steps": [
+        { "label": "検査", "details": ["件数と文字数を数える", "error があれば中止"] },
+        { "label": "描画", "details": ["図形とテキストを配置", "未対応レイアウト"] },
+        { "label": "発行", "details": ["変換アップロード", "認証切れ"] }
+      ]
+    },
+    {
+      "layout": "timeline",
+      "title": "検証した経路",
+      "points": [
+        { "date": "PPTX", "detail": "pptxgenjs で生成" },
+        { "date": "変換", "detail": "Drive がネイティブ形式へ" },
+        { "date": "更新", "detail": "同一 URL を保つ" },
+        { "date": "PDF", "detail": "目視検査へ回す" }
+      ]
+    },
+    {
+      "layout": "titled-boxes",
+      "title": "ファイルの役割",
+      "lead": "帯は直角・白の標準ウェイト・中央揃えにする。",
+      "variant": "cols-3",
+      "boxes": [
+        { "heading": "theme.js", "body": "色・フォント・寸法の単一の正。デザイン変更はここだけを直す" },
+        { "heading": "layouts.js", "body": "1 スライドを図形へ落とす。座標は px で書き、inch へ変換する" },
+        { "heading": "validate.js", "body": "描画前に密度バジェットを検査する。内容は削らない" }
+      ]
+    },
+    {
+      "layout": "concept-base",
+      "title": "構成",
+      "elements": ["検査", "描画", "発行"],
+      "foundation": "theme.js のデザイントークン"
+    },
+    {
+      "layout": "closing",
+      "message": "以上"
+    }
+  ]
+}
